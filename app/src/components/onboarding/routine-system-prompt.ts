@@ -31,7 +31,7 @@ The user just saved the day-planning Skill (\`${ONBOARDING_SKILL_SLUG}\`) and cl
 
    Then STOP and wait. Do not start writing the routine yet.
 
-2. Parse their answer to a 24h \`HH:MM\` in their local time. If they said "default" or anything ambiguous, use \`07:00\`. Do not ask follow-ups about timezone — Houston already knows the user's account timezone.
+2. Parse their answer to a 24h \`HH:MM\` in their local time. If they said "default" or anything ambiguous, use \`07:00\`. Do not ask follow-ups about timezone — NodoFlux Agente already knows the user's account timezone.
 
 3. Confirm in ONE short line and wait for a yes/no:
 

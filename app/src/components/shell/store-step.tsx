@@ -39,7 +39,7 @@ export function StoreStep({
   const filteredAgents = useMemo(
     () =>
       agents.filter((d) => {
-        if (d.source === "installed" && d.config.author === "Houston") {
+        if (d.source === "installed" && d.config.author === "NodoFlux") {
           return false;
         }
         if (storeIds.has(d.config.id)) return false;

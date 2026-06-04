@@ -32,8 +32,8 @@
     "nativeTriggeredDescription": "Revisa Sentry para sentry-native-stack-smoke-test."
   },
   "errorToast": {
-    "problemTitle": "Houston, tenemos un problema.",
-    "reportSentTitle": "Houston, reporte enviado",
+    "problemTitle": "NodoFlux Agente, tenemos un problema.",
+    "reportSentTitle": "NodoFlux Agente, reporte enviado",
     "reportSentDescription": "Referencia #{{id}}.",
     "copyId": "Copiar código"
   },
@@ -120,7 +120,7 @@
     "reloadNow": "Recargar ahora"
   },
   "authReconnect": {
-    "heading": "Houston, tenemos un problema",
+    "heading": "NodoFlux Agente, tenemos un problema",
     "body": "Tu sesión de {{provider}} expiró. Inicia sesión de nuevo para mantener tus agentes funcionando.",
     "waiting": "Esperando el inicio de sesión en el navegador...",
     "signInWith": "Iniciar sesión con {{provider}}"
@@ -139,7 +139,7 @@
     "report": "Reportar error",
     "reporting": "Enviando reporte...",
     "reportSuccessTitle": "Reporte enviado",
-    "reportSuccessDescription": "Houston recibió los registros.",
+    "reportSuccessDescription": "NodoFlux Agente recibió los registros.",
     "reportErrorTitle": "No se pudo enviar el reporte",
     "reportErrorDescription": "Intenta otra vez en un momento.",
     "retryErrorTitle": "No se pudo intentar de nuevo",
@@ -153,19 +153,19 @@
     }
   },
   "updateChecker": {
-    "cardLabel": "Actualización de Houston disponible",
-    "title": "¡Houston, tenemos una actualización!",
+    "cardLabel": "Actualización de NodoFlux Agente disponible",
+    "title": "¡NodoFlux Agente, tenemos una actualización!",
     "availableDescription": "La versión {{version}} está lista. Estás en v{{currentVersion}}.",
     "downloading": "Descargando e instalando la actualización...",
     "downloadingProgress": "Descargando e instalando... {{progress}}%",
-    "ready": "Actualización instalada. Reinicia Houston para terminar.",
-    "errorInstall": "Houston no pudo instalar la actualización. Intenta otra vez en un momento.",
-    "errorRelaunch": "La actualización se instaló, pero Houston no pudo reiniciarse solo. Reinícialo manualmente o intenta otra vez.",
+    "ready": "Actualización instalada. Reinicia NodoFlux Agente para terminar.",
+    "errorInstall": "NodoFlux Agente no pudo instalar la actualización. Intenta otra vez en un momento.",
+    "errorRelaunch": "La actualización se instaló, pero NodoFlux Agente no pudo reiniciarse solo. Reinícialo manualmente o intenta otra vez.",
     "detailsHeading": "Novedades",
     "noDetails": "Esta actualización incluye las últimas correcciones y mejoras.",
     "primaryAction": "Actualizar y reiniciar",
     "installingAction": "Instalando actualización...",
-    "relaunchAction": "Reiniciar Houston",
+    "relaunchAction": "Reiniciar NodoFlux Agente",
     "retryAction": "Intentar otra vez",
     "dismissAction": "Descartar actualización por ahora"
   },
@@ -272,7 +272,7 @@
     "continueButton": "Continuar"
   },
   "engineGate": {
-    "starting": "Iniciando el motor de Houston…"
+    "starting": "Iniciando el motor de NodoFlux Agente…"
   },
   "providerError": {
     "rateLimited": {
@@ -298,15 +298,15 @@
     "unauthenticated": {
       "title": "Conéctate a {{provider}} de nuevo",
       "bodyTokenExpired": "Tu sesión de {{provider}} expiró. Vuelve a conectarte para continuar.",
-      "bodyNoCredentials": "Houston necesita que inicies sesión en {{provider}} antes de responder.",
-      "bodyInvalidApiKey": "La clave de API de {{provider}} que tiene Houston ya no es válida. Actualízala y vuelve a intentar.",
+      "bodyNoCredentials": "NodoFlux Agente necesita que inicies sesión en {{provider}} antes de responder.",
+      "bodyInvalidApiKey": "La clave de API de {{provider}} que tiene NodoFlux Agente ya no es válida. Actualízala y vuelve a intentar.",
       "bodyTokenRevoked": "Se revocó tu acceso a {{provider}}. Inicia sesión de nuevo para continuar.",
-      "bodyUnknown": "Houston no pudo autenticarse con {{provider}}. Vuelve a conectarte e inténtalo de nuevo.",
+      "bodyUnknown": "NodoFlux Agente no pudo autenticarse con {{provider}}. Vuelve a conectarte e inténtalo de nuevo.",
       "reconnect": "Reconectar"
     },
     "networkUnreachable": {
       "title": "No se puede conectar con {{provider}}",
-      "body": "Houston no pudo conectarse a la API de {{provider}}. Verifica tu conexión y vuelve a intentar.",
+      "body": "NodoFlux Agente no pudo conectarse a la API de {{provider}}. Verifica tu conexión y vuelve a intentar.",
       "retry": "Reintentar",
       "checkStatus": "Ver página de estado"
     },
@@ -318,7 +318,7 @@
     },
     "sessionResumeMissing": {
       "title": "Sesión reiniciada",
-      "body": "La conversación anterior de {{provider}} no se pudo reabrir, así que Houston la reinició. Tu mensaje se envió de nuevo y el asistente está respondiendo abajo.",
+      "body": "La conversación anterior de {{provider}} no se pudo reabrir, así que NodoFlux Agente la reinició. Tu mensaje se envió de nuevo y el asistente está respondiendo abajo.",
       "tryAgain": "Reintentar"
     },
     "malformedResponse": {
@@ -328,20 +328,20 @@
     },
     "spawnFailed": {
       "title": "No se pudo iniciar {{provider}}",
-      "body": "Houston no pudo iniciar {{provider}}. Reinstala e infórmanos si el problema continúa.",
+      "body": "NodoFlux Agente no pudo iniciar {{provider}}. Reinstala e infórmanos si el problema continúa.",
       "reinstall": "Reinstalar {{provider}}",
       "reportBug": "Reportar problema"
     },
     "unknown": {
       "title": "Pasó algo inesperado",
-      "body": "Houston no pudo clasificar este error de {{provider}}. Reporta el problema para que aprendamos a manejarlo.",
+      "body": "NodoFlux Agente no pudo clasificar este error de {{provider}}. Reporta el problema para que aprendamos a manejarlo.",
       "reportBug": "Reportar problema",
       "rawLabel": "Salida cruda"
     }
   },
   "palette": {
     "title": "Paleta de comandos",
-    "description": "Salta a cualquier parte de Houston",
+    "description": "Salta a cualquier parte de NodoFlux Agente",
     "placeholder": "Buscar agentes, misiones, acciones...",
     "empty": "Sin coincidencias. Prueba con otra palabra.",
     "groups": {
@@ -359,7 +359,7 @@
   },
   "cheatsheet": {
     "title": "Atajos de teclado",
-    "description": "Usa Houston sin tocar el ratón.",
+    "description": "Usa NodoFlux Agente sin tocar el ratón.",
     "sections": {
       "navigation": "Navegación",
       "cycle": "Recorrer",
