@@ -30,7 +30,7 @@
   },
   "attachmentIssues": {
     "title": "Algunos archivos no se adjuntaron",
-    "description": "Houston conservó tu mensaje y los archivos que sí puede usar.",
+    "description": "NodoFlux Agente conservó tu mensaje y los archivos que sí puede usar.",
     "close": "Entendido",
     "reasons": {
       "blockedType": "Este tipo de archivo no se puede usar aquí.",

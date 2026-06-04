@@ -39,17 +39,17 @@
   },
   "provider": {
     "title": "Proveedor de IA",
-    "description": "Houston usa <emph>tu propia</emph> suscripción. Nunca vemos tus credenciales."
+    "description": "NodoFlux Agente usa <emph>tu propia</emph> suscripción. Nunca vemos tus credenciales."
   },
   "connectPhone": {
     "title": "Conectar celular",
-    "description": "Escanea este código para manejar Houston desde tu celular. El mismo código sigue funcionando mientras esta computadora esté encendida y Houston esté abierto.",
+    "description": "Escanea este código para manejar NodoFlux Agente desde tu celular. El mismo código sigue funcionando mientras esta computadora esté encendida y NodoFlux Agente esté abierto.",
     "loading": "Preparando la conexión con tu celular…",
     "connectingStatus": "Conectando con el servicio del celular. Suele tomar unos segundos.",
-    "keepComputerAwake": "Mantén esta computadora despierta mientras usas Houston en tu celular.",
-    "alwaysOnHint": "Para acceso 24/7, <emph>Always On</emph> ejecuta Houston en nuestros servidores.",
+    "keepComputerAwake": "Mantén esta computadora despierta mientras usas NodoFlux Agente en tu celular.",
+    "alwaysOnHint": "Para acceso 24/7, <emph>Always On</emph> ejecuta NodoFlux Agente en nuestros servidores.",
     "errors": {
-      "noInternet": "Houston necesita conexión a internet la primera vez que lo abres. Conéctate y reabre Houston para habilitar el emparejamiento del celular.",
+      "noInternet": "NodoFlux Agente necesita conexión a internet la primera vez que lo abres. Conéctate y reabre NodoFlux Agente para habilitar el emparejamiento del celular.",
       "generic": "No se pudo generar un código de emparejamiento. Inténtalo de nuevo."
     },
     "reset": {
@@ -85,7 +85,7 @@
   },
   "shortcuts": {
     "title": "Atajos de teclado",
-    "description": "Usa Houston sin tocar el mouse."
+    "description": "Usa NodoFlux Agente sin tocar el mouse."
   },
   "reportBug": {
     "title": "Reportar bug",

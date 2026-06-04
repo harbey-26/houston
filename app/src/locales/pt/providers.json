@@ -15,7 +15,7 @@
     "cancel": "Cancelar"
   },
   "setup": {
-    "installHint": "Instale a CLI {{cli}} no seu computador. Houston detecta sozinho.",
+    "installHint": "Instale a CLI {{cli}} no seu computador. NodoFlux Agente detecta sozinho.",
     "installGuide": "Guia de instalação",
     "signInWith": "Entrar com {{provider}}",
     "waiting": "Esperando você terminar o login no navegador...",
@@ -25,8 +25,8 @@
   "claudeInstall": {
     "installing": "Baixando Claude Code...",
     "installingWithProgress": "Baixando Claude Code... {{progress}}%",
-    "failedTitle": "Houston não conseguiu baixar Claude Code",
-    "preparing": "Houston está baixando Claude Code em segundo plano. Se não começar, tente novamente abaixo.",
+    "failedTitle": "NodoFlux Agente não conseguiu baixar Claude Code",
+    "preparing": "NodoFlux Agente está baixando Claude Code em segundo plano. Se não começar, tente novamente abaixo.",
     "retry": "Tentar baixar de novo",
     "errors": {
       "timeout": "O download demorou demais. Verifique sua conexão com a internet e tente novamente.",
@@ -35,14 +35,14 @@
       "httpError": "Os servidores da Anthropic tiveram um problema (erro {{status}}). Tente novamente em alguns minutos.",
       "checksumMismatch": "O download não chegou completo. Verifique sua conexão e tente novamente.",
       "platformUnsupported": "O Claude Code ainda não está disponível para este dispositivo.",
-      "writeFailed": "O Houston não conseguiu salvar o Claude Code no seu computador. Verifique se há espaço suficiente e tente novamente.",
-      "unavailable": "O Houston não conseguiu iniciar o download. Tente novamente em instantes.",
+      "writeFailed": "O NodoFlux Agente não conseguiu salvar o Claude Code no seu computador. Verifique se há espaço suficiente e tente novamente.",
+      "unavailable": "O NodoFlux Agente não conseguiu iniciar o download. Tente novamente em instantes.",
       "unknown": "Algo deu errado ao baixar o Claude Code. Tente novamente."
     }
   },
   "signOutConfirm": {
     "title": "Sair de {{provider}}?",
-    "description": "Houston vai parar de usar {{provider}} até você entrar de novo. As missões em andamento podem terminar o turno atual.",
+    "description": "NodoFlux Agente vai parar de usar {{provider}} até você entrar de novo. As missões em andamento podem terminar o turno atual.",
     "confirm": "Sair",
     "cancel": "Cancelar"
   },
@@ -78,7 +78,7 @@
   },
   "geminiConnect": {
     "title": "Conectar {{name}}",
-    "description": "Entre com sua conta Google para usar o plano gratuito do Gemini, o mesmo que a CLI gemini usa fora do Houston.",
+    "description": "Entre com sua conta Google para usar o plano gratuito do Gemini, o mesmo que a CLI gemini usa fora do NodoFlux Agente.",
     "signInWithGoogle": "Entrar com Google",
     "signingIn": "Abrindo o navegador...",
     "signInFailed": "Não foi possível iniciar o login de {{name}}",

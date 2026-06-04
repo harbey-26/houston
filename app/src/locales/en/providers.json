@@ -15,7 +15,7 @@
     "cancel": "Cancel"
   },
   "setup": {
-    "installHint": "Install the {{cli}} CLI on your machine. Houston will pick it up automatically.",
+    "installHint": "Install the {{cli}} CLI on your machine. NodoFlux Agente will pick it up automatically.",
     "installGuide": "Install guide",
     "signInWith": "Sign in with {{provider}}",
     "waiting": "Waiting for the sign-in to finish in your browser...",
@@ -25,8 +25,8 @@
   "claudeInstall": {
     "installing": "Downloading Claude Code...",
     "installingWithProgress": "Downloading Claude Code... {{progress}}%",
-    "failedTitle": "Houston couldn't download Claude Code",
-    "preparing": "Houston is downloading Claude Code in the background. If it doesn't start, try again below.",
+    "failedTitle": "NodoFlux Agente couldn't download Claude Code",
+    "preparing": "NodoFlux Agente is downloading Claude Code in the background. If it doesn't start, try again below.",
     "retry": "Retry download",
     "errors": {
       "timeout": "The download took too long. Check your internet connection and try again.",
@@ -35,14 +35,14 @@
       "httpError": "Anthropic's servers had a problem (error {{status}}). Try again in a few minutes.",
       "checksumMismatch": "The download didn't arrive intact. Check your connection and try again.",
       "platformUnsupported": "Claude Code isn't available for this device yet.",
-      "writeFailed": "Houston couldn't save Claude Code to your computer. Make sure there's enough space and try again.",
-      "unavailable": "Houston couldn't start the download. Try again in a moment.",
+      "writeFailed": "NodoFlux Agente couldn't save Claude Code to your computer. Make sure there's enough space and try again.",
+      "unavailable": "NodoFlux Agente couldn't start the download. Try again in a moment.",
       "unknown": "Something went wrong while downloading Claude Code. Try again."
     }
   },
   "signOutConfirm": {
     "title": "Sign out of {{provider}}?",
-    "description": "Houston will stop using {{provider}} until you sign in again. Existing missions can still finish their current turn.",
+    "description": "NodoFlux Agente will stop using {{provider}} until you sign in again. Existing missions can still finish their current turn.",
     "confirm": "Sign out",
     "cancel": "Cancel"
   },
@@ -78,7 +78,7 @@
   },
   "geminiConnect": {
     "title": "Connect {{name}}",
-    "description": "Sign in with your Google account to use the free Gemini tier, the same one the gemini CLI uses outside Houston.",
+    "description": "Sign in with your Google account to use the free Gemini tier, the same one the gemini CLI uses outside NodoFlux Agente.",
     "signInWithGoogle": "Sign in with Google",
     "signingIn": "Opening browser...",
     "signInFailed": "Couldn't start {{name}} sign-in",

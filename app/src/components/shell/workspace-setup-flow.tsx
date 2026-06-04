@@ -88,7 +88,7 @@ export function WorkspaceSetupFlow({ mode, onComplete }: Props) {
           <p className="text-sm text-muted-foreground">
             <Trans
               i18nKey="setup:provider.description"
-              defaults="Houston uses <emph>your own</emph> subscription. We never see your credentials."
+              defaults="NodoFlux Agente uses <emph>your own</emph> subscription. We never see your credentials."
               components={{
                 emph: <strong className="text-foreground font-medium" />,
               }}
