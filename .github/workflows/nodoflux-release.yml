@@ -54,6 +54,16 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
+      - name: Stage bundled CLI dependencies (codex, composio)
+        run: |
+          set -euo pipefail
+          if ! command -v jq >/dev/null 2>&1; then
+            brew install jq
+          fi
+          ./scripts/fetch-cli-deps.sh both
+          echo "=== Staged bundle ==="
+          ls -lah app/src-tauri/resources/bin/
+
       - name: Build houston-engine sidecar (aarch64 + x86_64)
         run: |
           set -euo pipefail
@@ -125,7 +135,7 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -156,6 +166,27 @@ jobs:
             target
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Install Bun + jq + zstd (Windows CLI build deps)
+        shell: pwsh
+        run: |
+          $bunVersion = (Get-Content cli-deps.json | ConvertFrom-Json).composio.build.'windows-x64'.bun_version
+          $bunDir = "$HOME\.bun\bin"
+          New-Item -ItemType Directory -Force -Path $bunDir | Out-Null
+          $url = "https://github.com/oven-sh/bun/releases/download/bun-v$bunVersion/bun-windows-x64.zip"
+          Invoke-WebRequest -Uri $url -OutFile "$env:TEMP\bun.zip"
+          Expand-Archive -Force -Path "$env:TEMP\bun.zip" -DestinationPath "$env:TEMP\bun-extract"
+          Copy-Item -Force "$env:TEMP\bun-extract\bun-windows-x64\bun.exe" "$bunDir\bun.exe"
+          echo "$bunDir" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          choco install -y jq zstandard --no-progress
+
+      - name: Stage bundled CLI dependencies (codex, composio)
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./scripts/fetch-cli-deps.sh windows-x64
+          echo "=== Staged bundle ==="
+          ls -lah app/src-tauri/resources/bin/
 
       - name: Build houston-engine sidecar
         shell: bash
