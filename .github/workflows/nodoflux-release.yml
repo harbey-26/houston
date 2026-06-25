@@ -102,7 +102,7 @@ jobs:
       - name: Generate updater manifest (latest.json)
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          TAR_NAME=$(basename "${{ steps.artifacts.outputs.tar }}")
+          TAR_NAME=$(basename "${{ steps.artifacts.outputs.tar }}" | tr ' ' '.')
           SIG=$(cat "${{ steps.artifacts.outputs.sig }}")
           URL="https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/$TAR_NAME"
           jq -n \

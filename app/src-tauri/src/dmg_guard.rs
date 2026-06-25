@@ -78,15 +78,15 @@ enum Choice {
     Quit,
 }
 
-fn show_move_dialog() -> Choice {
+fn show_move_dialog(app_name: &str) -> Choice {
     let result = rfd::MessageDialog::new()
         .set_level(rfd::MessageLevel::Info)
-        .set_title("Move Houston to your Applications folder")
-        .set_description(
-            "Houston is currently running from the installer disk image. To use it normally, \
+        .set_title(&format!("Move {app_name} to your Applications folder"))
+        .set_description(&format!(
+            "{app_name} is currently running from the installer disk image. To use it normally, \
              move it to your Applications folder.\n\n\
-             Click Move to do this automatically. Then open Houston from Applications.",
-        )
+             Click Move to do this automatically. Then open {app_name} from Applications."
+        ))
         .set_buttons(rfd::MessageButtons::OkCancelCustom(
             "Move to Applications".into(),
             "Quit".into(),
@@ -108,47 +108,51 @@ fn show_error(title: &str, body: &str) {
         .show();
 }
 
-fn show_already_installed_and_running() {
+fn show_already_installed_and_running(app_name: &str) {
     rfd::MessageDialog::new()
         .set_level(rfd::MessageLevel::Warning)
-        .set_title("Houston is already running")
-        .set_description(
-            "Houston is already installed in your Applications folder and currently running. \
-             Quit the running copy first, then drag Houston from this disk image into Applications.",
-        )
+        .set_title(&format!("{app_name} is already running"))
+        .set_description(&format!(
+            "{app_name} is already installed in your Applications folder and currently running. \
+             Quit the running copy first, then drag {app_name} from this disk image into Applications."
+        ))
         .set_buttons(rfd::MessageButtons::Ok)
         .show();
 }
 
-/// True if there's a Houston process running with `/Applications/Houston.app` in its path.
+/// True if there's a process running with `/Applications/<bundle_name>/Contents/MacOS/` in its path.
 /// Best-effort — we shell out to `pgrep` because there's no portable Rust API for this.
-fn is_installed_copy_running() -> bool {
+fn is_installed_copy_running(bundle_name: &std::ffi::OsStr) -> bool {
+    let path_pattern = format!("/Applications/{}/Contents/MacOS/", bundle_name.to_string_lossy());
     Command::new("/usr/bin/pgrep")
-        .args(["-f", "/Applications/Houston.app/Contents/MacOS/"])
+        .args(["-f", &path_pattern])
         .output()
         .map(|o| o.status.success() && !o.stdout.is_empty())
         .unwrap_or(false)
 }
 
-/// Copy the source `.app` bundle into `/Applications/Houston.app`,
+/// Copy the source `.app` bundle into `/Applications/<bundle_name>`,
 /// replacing any existing copy. Returns the destination path on success.
 fn copy_to_applications(source_app: &Path) -> Result<PathBuf, String> {
-    let dest = PathBuf::from("/Applications/Houston.app");
+    let bundle_name = source_app.file_name()
+        .ok_or_else(|| "Could not resolve app bundle name".to_string())?;
+    let dest = PathBuf::from("/Applications").join(bundle_name);
 
     if dest.exists() {
-        if is_installed_copy_running() {
+        if is_installed_copy_running(bundle_name) {
             return Err("running".into());
         }
         // `rm -rf` is safe here: dest is a hardcoded path to a specific
         // .app bundle, not a user-supplied value. The alternative (Rust
         // recursive remove) fails on signed bundles whose `Contents/_CodeSignature`
         // has restrictive perms; the shell tool handles it correctly.
+        let dest_str = dest.to_string_lossy();
         let rm = Command::new("/bin/rm")
-            .args(["-rf", "/Applications/Houston.app"])
+            .args(["-rf", &dest_str])
             .status()
             .map_err(|e| format!("failed to invoke /bin/rm: {e}"))?;
         if !rm.success() {
-            return Err(format!("rm -rf /Applications/Houston.app exited with {rm}"));
+            return Err(format!("rm -rf {dest_str} exited with {rm}"));
         }
     }
 
@@ -201,14 +205,19 @@ pub fn handle_if_needed() {
             if forced_debug {
                 // Dev preview: show the dialog with a fake source so the
                 // user can verify the copy + branding. Quit after.
-                let _ = show_move_dialog();
+                let _ = show_move_dialog("NodoFlux Agente");
                 return;
             }
             return;
         }
     };
 
-    match show_move_dialog() {
+    let app_name = source_app
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("NodoFlux Agente");
+
+    match show_move_dialog(app_name) {
         Choice::Quit => {
             std::process::exit(0);
         }
@@ -222,9 +231,9 @@ pub fn handle_if_needed() {
                 Ok(dest) => {
                     if let Err(e) = launch_app(&dest) {
                         show_error(
-                            "Couldn't launch Houston from Applications",
+                            &format!("Couldn't launch {app_name} from Applications"),
                             &format!(
-                                "Houston was copied to /Applications but failed to launch. \
+                                "{app_name} was copied to /Applications but failed to launch. \
                                  Please open it from your Applications folder.\n\nDetails: {e}"
                             ),
                         );
@@ -233,15 +242,15 @@ pub fn handle_if_needed() {
                     std::process::exit(0);
                 }
                 Err(err) if err == "running" => {
-                    show_already_installed_and_running();
+                    show_already_installed_and_running(app_name);
                     std::process::exit(0);
                 }
                 Err(err) => {
                     show_error(
-                        "Couldn't move Houston to Applications",
+                        &format!("Couldn't move {app_name} to Applications"),
                         &format!(
-                            "Houston couldn't copy itself to your Applications folder. \
-                             Please drag the Houston icon onto the Applications shortcut in the disk image instead.\n\n\
+                            "{app_name} couldn't copy itself to your Applications folder. \
+                             Please drag the {app_name} icon onto the Applications shortcut in the disk image instead.\n\n\
                              Details: {err}"
                         ),
                     );
