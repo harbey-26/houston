@@ -112,15 +112,56 @@ export function AgentAvatar({ config, size = "md" }: AgentAvatarProps) {
   );
 }
 
-export function HoustonLogo({ size = 20, className = "" }: { size?: number; className?: string }) {
+export function HoustonLogo({
+  size = 20,
+  className = "",
+  variant = "default",
+}: {
+  size?: number;
+  className?: string;
+  variant?: "default" | "white" | "black";
+}) {
+  if (variant === "white") {
+    return (
+      <img
+        src={houstonIconWhite}
+        alt="NodoFlux"
+        width={size}
+        height={size}
+        className={`shrink-0 object-contain ${className}`}
+      />
+    );
+  }
+
+  if (variant === "black") {
+    return (
+      <img
+        src={houstonIcon}
+        alt="NodoFlux"
+        width={size}
+        height={size}
+        className={`shrink-0 object-contain ${className}`}
+      />
+    );
+  }
+
   return (
-    <img
-      src={houstonIcon}
-      alt="NodoFlux"
-      width={size}
-      height={size}
-      className={`shrink-0 object-contain ${className}`}
-    />
+    <>
+      <img
+        src={houstonIcon}
+        alt="NodoFlux"
+        width={size}
+        height={size}
+        className={`shrink-0 object-contain houston-logo-dark ${className}`}
+      />
+      <img
+        src={houstonIconWhite}
+        alt="NodoFlux"
+        width={size}
+        height={size}
+        className={`shrink-0 object-contain houston-logo-light hidden ${className}`}
+      />
+    </>
   );
 }
 

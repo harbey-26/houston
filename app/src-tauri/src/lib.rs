@@ -296,10 +296,22 @@ pub fn run() {
                     sentry_environment.to_string(),
                 ));
             }
-            // 30s banner timeout: first-run Gatekeeper scan on a notarized
+            // 60s banner timeout: first-run Gatekeeper scan on a notarized
             // sidecar can take 15–20s on slow machines.
-            let slot = spawn_supervisor(binary, Duration::from_secs(30), engine_env, cb)
-                .expect("failed to spawn houston-engine");
+            let slot = match spawn_supervisor(binary, Duration::from_secs(60), engine_env, cb) {
+                Ok(s) => s,
+                Err(e) => {
+                    let msg = format!("Failed to spawn houston-engine: {e}");
+                    tracing::error!("{msg}");
+                    rfd::MessageDialog::new()
+                        .set_level(rfd::MessageLevel::Error)
+                        .set_title("Startup Error")
+                        .set_description(&msg)
+                        .set_buttons(rfd::MessageButtons::Ok)
+                        .show();
+                    return Err(msg.into());
+                }
+            };
             let handshake = {
                 let guard = slot.lock().expect("engine slot poisoned");
                 guard
@@ -308,7 +320,7 @@ pub fn run() {
                     .handshake
                     .clone()
             };
-            // 30s matches the banner timeout above. On first launch the
+            // 60s matches the banner timeout above. On first launch the
             // engine has to import the bundled certificates, run a
             // login-shell PATH probe, and (on Windows) kick off
             // PortableGit extraction in the background. The shorter
@@ -317,8 +329,17 @@ pub fn run() {
             // it killed the engine subprocess, which on Windows meant
             // an in-flight PortableGit extraction was never finalized
             // and re-fired identically on every relaunch.
-            wait_until_healthy(&handshake, Duration::from_secs(30))
-                .expect("engine did not pass /v1/health in time");
+            if let Err(e) = wait_until_healthy(&handshake, Duration::from_secs(60)) {
+                let msg = format!("Engine did not pass /v1/health in time: {e}");
+                tracing::error!("{msg}");
+                rfd::MessageDialog::new()
+                    .set_level(rfd::MessageLevel::Error)
+                    .set_title("Startup Error")
+                    .set_description(&msg)
+                    .set_buttons(rfd::MessageButtons::Ok)
+                    .show();
+                return Err(msg.into());
+            }
 
             // Stash the handshake so the frontend can pull it via
             // `get_engine_handshake` — wins the race when the one-shot
