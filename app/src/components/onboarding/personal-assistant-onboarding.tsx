@@ -1,34 +1,30 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ToastContainer, type Toast } from "@houston-ai/core";
 import { analytics } from "../../lib/analytics";
 import { useUIStore } from "../../stores/ui";
 import { useWorkspaceStore } from "../../stores/workspaces";
 import { useAgentStore } from "../../stores/agents";
-import { tauriProvider, tauriWorkspaces } from "../../lib/tauri";
+import { tauriAgents, tauriProvider, tauriWorkspaces } from "../../lib/tauri";
 import { getDefaultModel } from "../../lib/providers";
 import type { Agent } from "../../lib/types";
-import { MissionFrame } from "./mission-frame";
 import { MeetMission } from "./missions/meet";
 import { BrainMission } from "./missions/brain";
+import { ProviderLoginMission } from "./missions/provider-login";
 import { ToolsMission } from "./missions/tools";
-import { TryMission } from "./missions/try";
-import { SkillMission } from "./missions/skill";
-import { RoutineMission } from "./missions/routine";
-import { SummaryScreen } from "./summary-screen";
-import { WelcomeScreen } from "./welcome-screen";
+import { ConnectEmailMission } from "./missions/connect-email";
+import { EmailMission } from "./missions/email";
+import { FinishedMission } from "./missions/finished";
+import { SetupProgress } from "./setup-progress";
 import { createPersonalAssistantForWorkspace } from "./create-personal-assistant";
+import { ensureWorkspaceWithAssistant } from "./ensure-default-assistant";
 import {
   buildAssistantInstructions,
   defaultAssistantSetup,
 } from "./personal-assistant-artifacts";
 import { TUTORIAL_MISSION } from "./personal-assistant-missions";
-import {
-  buildFrameLabels,
-  buildMissionMeta,
-  type OnboardingStep,
-  type TutorialStep,
-} from "./tutorial-copy";
+import { type OnboardingStep } from "./tutorial-copy";
+import { stepSection } from "../../lib/setup-steps";
 
 interface PersonalAssistantOnboardingProps {
   toasts: Toast[];
@@ -42,223 +38,334 @@ export function PersonalAssistantOnboarding({
   const { t } = useTranslation(["setup", "common"]);
   const setTutorialActive = useUIStore((s) => s.setTutorialActive);
   const setUiTourActive = useUIStore((s) => s.setUiTourActive);
-  const [step, setStep] = useState<OnboardingStep>("welcome");
+  const setViewMode = useUIStore((s) => s.setViewMode);
+  const addToast = useUIStore((s) => s.addToast);
+  const [step, setStep] = useState<OnboardingStep>("intro");
   const [agent, setAgent] = useState<Agent | null>(null);
   const [provider, setProvider] = useState<string | null>(null);
   const [model, setModel] = useState<string | null>(null);
-  /**
-   * Activity session key minted by the Try mission's `createMission` call.
-   * The Routine mission re-uses the same session so the chat history (the
-   * agent's full day-plan reply with the bold sections) carries over and
-   * the agent can reference it while writing the routine prompt.
-   */
-  const [missionSessionKey, setMissionSessionKey] = useState<string | null>(
-    null,
-  );
+  // Set while the create-agent step is provisioning, to drive the loading state.
+  const [creatingAgent, setCreatingAgent] = useState(false);
+  // The email toolkit connected in the "give access to your email" step.
+  const [emailTool, setEmailTool] = useState<{
+    toolkit: string;
+    label: string;
+  } | null>(null);
   const [assistantName, setAssistantName] = useState(() =>
     t("setup:tutorial.defaults.assistantName"),
   );
   const [assistantColor, setAssistantColor] = useState("navy");
+  // Collapses concurrent / repeated default-workspace creation onto a single
+  // in-flight operation so first-run can never fire `createWorkspace` twice
+  // (a double-clicked Continue, a remount) — HOU-444.
+  const creationRef = useRef<Promise<Agent> | null>(null);
 
-  const missionTitle = t("setup:tutorial.missions.try.skill.title");
-
-  const missionStep = step === "welcome" ? null : (step as TutorialStep);
-  const meta = missionStep ? buildMissionMeta(t, missionStep) : null;
-  const frame = missionStep ? buildFrameLabels(t, missionStep) : null;
+  // Title stamped on the agent's first-run instructions.
+  const missionTitle = t("setup:tutorial.missions.email.chip");
 
   // `tutorialActive` pins the orchestrator in front of the workspace shell so
-  // the workspace-create event in M2 (Brain) doesn't unmount us. Set on the
-  // user's explicit Start / Skip click — NOT on mount — so a returning user
-  // whose first paint briefly falls through `workspaces.length === 0` is not
-  // trapped here once their real workspaces arrive.
-  const startTutorial = () => {
-    analytics.track("onboarding_started", { source: "tutorial" });
+  // the workspace-create event in the create step doesn't unmount us.
+  useEffect(() => {
+    analytics.track("onboarding_started", { source: "setup" });
     setTutorialActive(true);
-    setStep("meet");
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const createWorkspaceAndAssistant = async (
+  // Fire one step-viewed event per screen reached so a single funnel shows
+  // exactly where people drop off. Guarded so re-renders / Back don't refire.
+  const viewedSteps = useRef(new Set<string>());
+  useEffect(() => {
+    if (!viewedSteps.current.has(step)) {
+      viewedSteps.current.add(step);
+      analytics.track("onboarding_step_viewed", { step });
+    }
+  }, [step]);
+
+  const createWorkspaceAndAssistant = (
     pickedProvider: string,
     pickedModel: string,
   ): Promise<Agent> => {
-    const setup = defaultAssistantSetup({
-      workspaceName: t("setup:tutorial.defaults.workspaceName"),
-      assistantName: assistantName.trim() || t("setup:tutorial.defaults.assistantName"),
-      focus: t("setup:tutorial.defaults.focus"),
-      approvalRule: t("setup:tutorial.defaults.approvalRule"),
-    });
-    setup.color = assistantColor;
-    const ws = await tauriWorkspaces.create(setup.workspaceName.trim());
-    // Persist the picked pair as the new global default so the next new agent
-    // starts from the same place the user just chose during onboarding.
-    await tauriProvider.setLastUsed(pickedProvider, pickedModel);
-    analytics.track("workspace_created", { provider: pickedProvider, source: "onboarding" });
-    const created = await createPersonalAssistantForWorkspace(ws.id, {
-      name: setup.assistantName.trim(),
-      instructions: buildAssistantInstructions(setup, missionTitle),
-      color: setup.color,
-      provider: pickedProvider,
-      model: pickedModel,
-    });
-    await useWorkspaceStore.getState().loadWorkspaces();
-    useWorkspaceStore.getState().setCurrent(ws);
-    await useAgentStore.getState().loadAgents(ws.id);
-    const refreshed =
-      useAgentStore.getState().agents.find((a) => a.id === created.id) ?? created;
-    useAgentStore.getState().setCurrent(refreshed);
-    setAgent(refreshed);
-    return refreshed;
-  };
+    if (creationRef.current) return creationRef.current;
 
-  const handleSkip = async () => {
-    // Skip path: create the workspace + assistant, but no UI tour and no
-    // tutorial artifacts. User lands directly in the workspace shell.
-    analytics.track("onboarding_started", { source: "skip" });
-    setTutorialActive(true);
-    try {
-      const fallbackProvider = provider ?? "anthropic";
-      const fallbackModel = model ?? getDefaultModel(fallbackProvider);
-      await createWorkspaceAndAssistant(fallbackProvider, fallbackModel);
-      analytics.track("onboarding_completed", {
-        mission: TUTORIAL_MISSION.id,
-        integrations_skipped: true,
-        tutorial_run: false,
+    const op = (async (): Promise<Agent> => {
+      const setup = defaultAssistantSetup({
+        workspaceName: t("setup:tutorial.defaults.workspaceName"),
+        assistantName:
+          assistantName.trim() || t("setup:tutorial.defaults.assistantName"),
+        focus: t("setup:tutorial.defaults.focus"),
+        approvalRule: t("setup:tutorial.defaults.approvalRule"),
       });
-    } finally {
-      setTutorialActive(false);
-    }
+      setup.color = assistantColor;
+
+      const { workspace: ws, assistant: created, createdWorkspace } =
+        await ensureWorkspaceWithAssistant(setup.workspaceName, {
+          listWorkspaces: () => tauriWorkspaces.list(),
+          createWorkspace: (name) => tauriWorkspaces.create(name),
+          listAgents: (workspaceId) => tauriAgents.list(workspaceId),
+          createAssistant: (workspaceId) =>
+            createPersonalAssistantForWorkspace(workspaceId, {
+              name: setup.assistantName.trim(),
+              instructions: buildAssistantInstructions(setup, missionTitle),
+              color: setup.color,
+              provider: pickedProvider,
+              model: pickedModel,
+            }),
+        });
+
+      await tauriProvider.setLastUsed(pickedProvider, pickedModel);
+      if (createdWorkspace) {
+        analytics.track("workspace_created", {
+          provider: pickedProvider,
+          source: "onboarding",
+        });
+      }
+      await useWorkspaceStore.getState().loadWorkspaces();
+      useWorkspaceStore.getState().setCurrent(ws);
+      await useAgentStore.getState().loadAgents(ws.id);
+      const refreshed =
+        useAgentStore.getState().agents.find((a) => a.id === created.id) ??
+        created;
+      useAgentStore.getState().setCurrent(refreshed);
+      setAgent(refreshed);
+      return refreshed;
+    })();
+
+    creationRef.current = op;
+    op.catch(() => {
+      creationRef.current = null;
+    });
+    return op;
   };
 
-  // Step transitions for the back-half of the tutorial (Try → Skill →
-  // Routine → Summary → app tour). None of them clear `tutorialActive`
-  // — each next step still owns the screen, and clearing here would
-  // let the workspace shell race in behind. `onboarding_completed`
-  // fires at the very end (after the Summary "Enter Houston" CTA or
-  // an explicit Skip).
-  const handleTryComplete = () => setStep("skill");
-  const handleSkillComplete = () => setStep("routine");
-  const handleRoutineComplete = () => setStep("summary");
-
-  // Terminal hand-off. Arm the UI tour BEFORE clearing `tutorialActive`
-  // so the workspace shell mounts with the tour overlay already up —
-  // no flicker of bare workspace. Called by the Summary CTA AND by
-  // every always-on Skip link in M4-M6 so a user who bails midway
-  // still lands in the workspace shell cleanly.
-  const finishOnboarding = () => {
+  // Terminal hand-off. Arm the UI tour BEFORE clearing `tutorialActive` so the
+  // workspace shell mounts with the tour overlay already up — no flicker.
+  const finishOnboarding = (next: "tour" | "integrations") => {
     analytics.track("onboarding_completed", {
       mission: TUTORIAL_MISSION.id,
       integrations_skipped: false,
       tutorial_run: true,
+      source: next === "tour" ? "tour" : "connect_more",
     });
-    setUiTourActive(true);
+    if (next === "tour") setUiTourActive(true);
+    // "Connect more apps" lands the user in the Integrations browser.
+    else setViewMode("connections");
     setTutorialActive(false);
   };
 
-  // Provider/model the back-half missions (Try, Routine) run against. The
-  // user picks these in the Brain mission; fall back to the platform default
-  // model for the chosen provider if a mission renders before a pick.
+  // The create-agent step owns provisioning the workspace + assistant. By here
+  // provider/model are picked; reused creation is deduped (HOU-444).
+  const handleCreateAgent = async () => {
+    if (!provider || !model) return;
+    setCreatingAgent(true);
+    try {
+      analytics.track("onboarding_assistant_named");
+      await createWorkspaceAndAssistant(provider, model);
+      setCreatingAgent(false);
+      setStep("agentCreated");
+    } catch (err) {
+      addToast({
+        title: t("setup:tutorial.errors.setupFailed"),
+        description: String(err),
+        variant: "error",
+      });
+      setCreatingAgent(false);
+    }
+  };
+
+  // Provider/model the email send runs against (fall back to the default).
   const missionProvider = provider ?? "anthropic";
   const missionModel = model ?? getDefaultModel(missionProvider);
 
+  // Escape hatch (HOU-555): the final email step auto-advances on a marker the
+  // agent must emit, but some models send the email and never emit it, stranding
+  // the user with no way forward. Let them bail into the app. This is NOT a
+  // completion: it fires `onboarding_skipped` (not `onboarding_completed`) with
+  // the model, so analytics can separate "stuck and skipped" from a normal
+  // finish and surface which models strand users.
+  const skipOnboarding = (fromStep: OnboardingStep) => {
+    analytics.track("onboarding_skipped", {
+      step: fromStep,
+      provider: missionProvider,
+      model: missionModel,
+      source: "stuck",
+    });
+    setTutorialActive(false);
+  };
+
+  // Section-aware eyebrow: "Setup · 1 of 2", "Onboarding · 2 of 3". Empty for
+  // screens that aren't numbered steps (never rendered on those).
+  const stepEyebrow = (screen: string): string => {
+    const s = stepSection(screen);
+    if (!s) return "";
+    const sectionName =
+      s.section === "setup"
+        ? t("setup:tutorial.sections.setup")
+        : t("setup:tutorial.sections.onboarding");
+    return t("setup:tutorial.sectionCounter", {
+      section: sectionName,
+      current: s.current,
+      total: s.total,
+    });
+  };
+
   return (
     <>
-      {step === "welcome" && (
-        <WelcomeScreen
-          title={t("setup:tutorial.welcome.title")}
-          tagline={t("setup:tutorial.welcome.tagline")}
-          stepsTitle={t("setup:tutorial.welcome.stepsTitle")}
-          steps={[
-            t("setup:tutorial.welcome.steps.meet"),
-            t("setup:tutorial.welcome.steps.brain"),
-            t("setup:tutorial.welcome.steps.tools"),
-            t("setup:tutorial.welcome.steps.try"),
-            t("setup:tutorial.welcome.steps.routine"),
-          ]}
-          startLabel={t("setup:tutorial.welcome.start")}
-          skipLabel={t("setup:tutorial.welcome.skip")}
-          onStart={startTutorial}
-          onSkip={() => void handleSkip()}
+      {step === "intro" && (
+        <SetupProgress
+          section="setup"
+          title={t("setup:tutorial.missions.intro.title")}
+          message={t("setup:tutorial.missions.intro.body")}
+          done={[]}
+          ctaLabel={t("setup:tutorial.missions.intro.cta")}
+          onContinue={() => setStep("brain")}
         />
       )}
-      {meta && frame && step === "meet" && (
-        <MissionFrame meta={meta} {...frame}>
-          <MeetMission
-            name={assistantName}
-            color={assistantColor}
-            namePlaceholder={t("setup:tutorial.defaults.assistantName")}
-            beginLabel={t("setup:tutorial.missions.meet.begin")}
-            onNameChange={setAssistantName}
-            onColorChange={setAssistantColor}
-            onBegin={() => setStep("brain")}
-          />
-        </MissionFrame>
+
+      {step === "brain" && (
+        <BrainMission
+          eyebrow={stepEyebrow("brain")}
+          provider={provider}
+          onBack={() => setStep("intro")}
+          onSelect={(p, m) => {
+            setProvider(p);
+            setModel(m);
+          }}
+          onContinue={() => setStep("providerLogin")}
+        />
       )}
-      {meta && frame && step === "brain" && (
-        <MissionFrame meta={meta} {...frame}>
-          <BrainMission
-            provider={provider}
-            onSelect={(p, m) => {
-              setProvider(p);
-              setModel(m);
-            }}
-            onContinue={async () => {
-              if (!provider || !model) return;
-              await createWorkspaceAndAssistant(provider, model);
-              setStep("tools");
-            }}
-          />
-        </MissionFrame>
+      {step === "providerLogin" && provider && (
+        <ProviderLoginMission
+          eyebrow={stepEyebrow("providerLogin")}
+          providerId={provider}
+          onBack={() => setStep("brain")}
+          onContinue={() => setStep("aiConnected")}
+        />
       )}
-      {meta && frame && step === "tools" && (
-        <MissionFrame meta={meta} {...frame}>
-          <ToolsMission onContinue={() => setStep("try")} />
-        </MissionFrame>
+      {step === "aiConnected" && (
+        <SetupProgress
+          section="setup"
+          title={t("setup:tutorial.missions.aiConnected.title")}
+          message={t("setup:tutorial.missions.aiConnected.body")}
+          done={["ai"]}
+          justCompleted="ai"
+          ctaLabel={t("setup:tutorial.missions.aiConnected.cta")}
+          onContinue={() => setStep("tools")}
+        />
       )}
-      {meta && frame && step === "try" && agent && (
-        <TryMission
-          meta={meta}
-          frame={frame}
+
+      {step === "tools" && (
+        <ToolsMission
+          eyebrow={stepEyebrow("tools")}
+          onBack={() => setStep("providerLogin")}
+          onContinue={() => setStep("appsConnected")}
+        />
+      )}
+      {step === "appsConnected" && (
+        <SetupProgress
+          section="setup"
+          title={t("setup:tutorial.missions.appsConnected.title")}
+          message={t("setup:tutorial.missions.appsConnected.body")}
+          done={["ai", "apps"]}
+          justCompleted="apps"
+          ctaLabel={t("setup:tutorial.missions.appsConnected.cta")}
+          onContinue={() => setStep("onboardingIntro")}
+        />
+      )}
+      {step === "onboardingIntro" && (
+        <SetupProgress
+          section="onboarding"
+          title={t("setup:tutorial.missions.onboardingIntro.title")}
+          message={t("setup:tutorial.missions.onboardingIntro.body")}
+          done={[]}
+          ctaLabel={t("setup:tutorial.missions.onboardingIntro.cta")}
+          onContinue={() => setStep("meet")}
+        />
+      )}
+
+      {step === "meet" && (
+        <MeetMission
+          eyebrow={stepEyebrow("meet")}
+          name={assistantName}
+          color={assistantColor}
+          namePlaceholder={t("setup:tutorial.defaults.assistantName")}
+          onNameChange={setAssistantName}
+          onColorChange={setAssistantColor}
+          creating={creatingAgent}
+          onBegin={() => void handleCreateAgent()}
+        />
+      )}
+      {step === "agentCreated" && (
+        <SetupProgress
+          section="onboarding"
+          title={t("setup:tutorial.missions.agentCreated.title")}
+          message={t("setup:tutorial.missions.agentCreated.body")}
+          done={["agent"]}
+          justCompleted="agent"
+          ctaLabel={t("setup:tutorial.missions.agentCreated.cta")}
+          onContinue={() => setStep("connectEmail")}
+        />
+      )}
+
+      {step === "connectEmail" && (
+        <ConnectEmailMission
+          eyebrow={stepEyebrow("connectEmail")}
+          onBack={() => setStep("meet")}
+          onConnected={(toolkit, label) => {
+            // Capture which email the user connected (connectApp doesn't route
+            // through the AI card, so the global tracker wouldn't see it).
+            analytics.track("integration_connected", {
+              integration_slug: toolkit,
+            });
+            setEmailTool({ toolkit, label });
+            setStep("emailConnected");
+          }}
+        />
+      )}
+      {step === "emailConnected" && (
+        <SetupProgress
+          section="onboarding"
+          title={t("setup:tutorial.missions.emailConnected.title")}
+          message={t("setup:tutorial.missions.emailConnected.body")}
+          done={["agent", "email"]}
+          justCompleted="email"
+          ctaLabel={t("setup:tutorial.missions.emailConnected.cta")}
+          onContinue={() => setStep("emailChat")}
+        />
+      )}
+
+      {step === "emailChat" && agent && emailTool && (
+        <EmailMission
+          eyebrow={stepEyebrow("emailChat")}
           agent={agent}
           assistantColor={assistantColor}
           provider={missionProvider}
           model={missionModel}
-          onSessionKey={setMissionSessionKey}
-          onContinue={handleTryComplete}
-          onSkip={finishOnboarding}
+          emailToolkit={emailTool.toolkit}
+          emailToolkitLabel={emailTool.label}
+          onBack={() => setStep("connectEmail")}
+          onContinue={() => setStep("emailSent")}
+          onSkip={() => skipOnboarding("emailChat")}
         />
       )}
-      {meta && frame && step === "skill" && agent && missionSessionKey && (
-        <SkillMission
-          meta={meta}
-          frame={frame}
-          agent={agent}
-          assistantColor={assistantColor}
-          sessionKey={missionSessionKey}
-          onContinue={handleSkillComplete}
-          onSkip={finishOnboarding}
+      {step === "emailSent" && (
+        <SetupProgress
+          section="onboarding"
+          title={t("setup:tutorial.missions.emailSent.title")}
+          message={t("setup:tutorial.missions.emailSent.body")}
+          done={["agent", "email", "send"]}
+          justCompleted="send"
+          ctaLabel={t("setup:tutorial.missions.emailSent.cta")}
+          onContinue={() => setStep("finished")}
         />
       )}
-      {meta && frame && step === "routine" && agent && missionSessionKey && (
-        <RoutineMission
-          meta={meta}
-          frame={frame}
-          agent={agent}
-          assistantColor={assistantColor}
-          provider={missionProvider}
-          model={missionModel}
-          sessionKey={missionSessionKey}
-          onContinue={handleRoutineComplete}
-          onSkip={finishOnboarding}
+
+      {step === "finished" && (
+        <FinishedMission
+          onTour={() => finishOnboarding("tour")}
+          onConnectMore={() => finishOnboarding("integrations")}
         />
       )}
-      {frame && step === "summary" && agent && (
-        <SummaryScreen
-          frame={frame}
-          agent={agent}
-          assistantColor={assistantColor}
-          onContinue={finishOnboarding}
-        />
-      )}
+
       <ToastContainer toasts={toasts} onDismiss={onDismissToast} />
     </>
   );

@@ -17,128 +17,147 @@
   },
   "tutorial": {
     "brand": "NodoFlux Agente",
-    "counter": "Missão {{current}} de {{total}}",
-    "eyebrow": "Missão {{number}}",
-    "missionLabel": "Missão: {{title}}",
+    "nav": {
+      "back": "Voltar",
+      "continue": "Continuar"
+    },
+    "eyebrow": "Passo {{number}}",
+    "missionLabel": "Configuração: {{title}}",
     "upNext": "A seguir",
+    "errors": {
+      "setupFailed": "Não conseguimos terminar de configurar seu espaço de trabalho. Tente novamente."
+    },
     "welcome": {
       "title": "Bem-vindo ao NodoFlux Agente",
-      "tagline": "O NodoFlux Agente é onde você constrói Agentes que funcionam com as mesmas ferramentas que você usa para trabalhar.",
-      "stepsTitle": "O tutorial vai guiar você para criar seu primeiro agente:",
+      "tagline": "O NodoFlux Agente é onde você cria agentes que funcionam com os mesmos apps que você já usa.",
+      "stepsTitle": "Uma configuração rápida para deixar seu agente trabalhando:",
       "steps": {
-        "meet": "Conheça seu assistente",
+        "meet": "Conheça seu agente",
         "brain": "Conecte um provedor de IA para ele pensar",
-        "tools": "Dê as suas próprias ferramentas",
-        "try": "Teste uma missão real com seu assistente",
-        "skill": "Salve como uma Habilidade reutilizável",
-        "routine": "Agende como uma Rotina recorrente",
-        "summary": "Conheça seu assistente pronto para trabalhar"
+        "tools": "Conecte seus apps",
+        "email": "Envie seu primeiro e-mail real com ele"
       },
-      "start": "Começar tutorial",
-      "skip": "Pular tutorial"
-    },
-    "toolkits": {
-      "gmail": "Gmail",
-      "googlecalendar": "Google Calendar",
-      "outlook": "Outlook",
-      "outlook_calendar": "Outlook Calendar"
+      "start": "Começar",
+      "skip": "Configuro isso mais tarde"
     },
     "defaults": {
       "workspaceName": "Pessoal",
-      "assistantName": "Assistente pessoal",
+      "assistantName": "Agente pessoal",
       "focus": "Me ajude a ficar organizado, preparar meu dia, redigir mensagens, proteger tempo de foco e acompanhar pendências.",
       "approvalRule": "Pergunte antes de enviar mensagens, criar eventos de calendário ou mudar algo nos apps conectados.",
       "firstWorkflow": "Configure meu primeiro fluxo útil do dia"
     },
     "missions": {
-      "meet": {
-        "title": "Conheça seu assistente",
-        "body": "Dê um nome e uma cor para seu assistente. Você pode mudar depois.",
-        "begin": "Começar treinamento"
+      "intro": {
+        "title": "Vamos configurar sua conta",
+        "body": "Alguns passos rápidos e seu agente estará pronto para trabalhar.",
+        "cta": "Começar configuração",
+        "steps": {
+          "ai": "Conecte sua IA",
+          "apps": "Conecte seus apps",
+          "agent": "Crie seu agente",
+          "email": "Conecte seu e-mail",
+          "send": "Envie seu primeiro e-mail"
+        }
       },
       "brain": {
-        "title": "Dê um cérebro",
-        "body": "Seu assistente precisa de um provedor de IA para pensar e escrever. O NodoFlux Agente usa sua própria assinatura.",
-        "continue": "Criar meu assistente",
-        "creating": "Criando",
-        "continueHint": "O NodoFlux Agente vai criar seu assistente e abrir a próxima missão."
+        "title": "Entre na sua assinatura de IA",
+        "body": "Escolha a IA que você já paga. Você usa sua própria assinatura, então o NodoFlux Agente nunca vê sua senha nem sua fatura."
+      },
+      "providerLogin": {
+        "title": "Entre no {{provider}}",
+        "body": "Entre uma vez para que seu agente possa usar o {{provider}} por você.",
+        "loginButton": "Entrar no {{provider}}",
+        "waiting": "Aguardando o {{provider}}...",
+        "cancel": "Cancelar",
+        "connected": {
+          "title": "Tudo pronto",
+          "body": "Encontramos o {{provider}} neste computador. Você já está conectado com sua própria assinatura, então não há nada para configurar aqui."
+        }
       },
       "tools": {
-        "title": "Dê as suas próprias ferramentas",
-        "body": "O NodoFlux Agente se conecta ao seu e-mail, calendário e mais de 1000 apps através do seu provedor de integrações. Por padrão usamos o Composio. Entre uma vez para seu assistente poder trabalhar com seus apps reais.",
-        "cardTitle": "Provedor de integrações",
-        "cardBody": "Entre para seu assistente usar seus apps. Provedor padrão: Composio.",
-        "cardSignedInBody": "Seu assistente já pode usar seus apps",
-        "signIn": "Entrar",
-        "signedInPill": "Conectado",
-        "continue": "Continuar",
-        "continueHint": "Seu assistente vai pedir cada app na primeira vez que precisar."
-      },
-      "try": {
-        "title": "Teste uma missão real",
-        "intro": {
-          "title": "Trabalhe com seu primeiro agente",
-          "body": "No NodoFlux Agente, seus agentes se conectam às suas ferramentas reais para fazer o trabalho por você.",
-          "cta": "Vamos testar"
+        "title": "Conecte seus apps",
+        "body": "Seu agente trabalha com apps como Gmail e sua agenda através do Composio, um provedor de integrações seguro. Uma única conta permite conectar qualquer app, só quando você precisa.",
+        "steps": {
+          "account": "Crie sua conta no Composio",
+          "authorize": "Autorize o NodoFlux Agente a conectar"
         },
-        "doneTitle": "Você conseguiu. Primeira missão concluída.",
-        "placeholder": "Responda ao seu assistente...",
-        "skill": {
-          "title": "Planeja meu próximo dia de trabalho",
-          "description": "Lê sua agenda e caixa de entrada em paralelo, cruza para achar coisas que você ia perder e posta um plano estruturado com o que é urgente, sua agenda e quem responder."
-        },
-        "chip": "Planeja meu próximo dia de trabalho",
-        "continueChip": "Salve isto como uma Habilidade",
-        "skip": "Pular tutorial"
-      },
-      "skill": {
-        "title": "Salve isto como uma Habilidade",
-        "intro": {
-          "title": "Salve como uma Habilidade",
-          "body": "Se você quiser executar este mesmo fluxo depois, salve como uma Habilidade. Seu assistente pode repetir com um clique ou sempre que você pedir.",
-          "cta": "Entendi"
-        },
-        "chip": "Salve isto como uma Habilidade",
-        "continueChip": "Transforme em uma Rotina",
-        "skip": "Pular tutorial",
-        "placeholder": "Responda ao seu assistente...",
-        "savedDescription": "Planeja o próximo dia útil cruzando e-mail e agenda, com um rascunho de resposta para o e-mail mais importante.",
-        "savedMessage": "Salva como Habilidade chamada **{{slug}}**. Você pode executar quando quiser, com um clique ou me pedindo.",
-        "done": {
-          "title": "Salva como Habilidade",
-          "subtitle": "Agora você pode executar quando quiser, com um clique ou pedindo.",
-          "integrationsLabel": "Usa",
-          "savedLabel": "Habilidade"
+        "allow": "Entrar",
+        "waiting": "Esperando você no navegador...",
+        "cancel": "Cancelar",
+        "connected": {
+          "title": "Tudo pronto",
+          "body": "Seu agente já pode conectar seus apps quando você precisar."
         }
       },
-      "routine": {
-        "title": "Transforme em uma Rotina",
-        "intro": {
-          "title": "Transforme em uma Rotina",
-          "body": "Se você quiser que isso rode automaticamente num horário, salve como uma Rotina. Seu assistente executa em segundo plano e mostra o resultado.",
-          "cta": "Entendi"
-        },
-        "chip": "Transforme em uma Rotina",
-        "continueChip": "Conheça seu assistente",
-        "skip": "Pular tutorial",
-        "placeholder": "Responda ao seu assistente...",
-        "done": {
-          "title": "Sua Rotina está pronta",
-          "subtitle": "O NodoFlux Agente vai executar isso automaticamente no horário que você escolheu.",
-          "everyWeekdayAt": "Todo dia útil às {{time}}",
-          "runsSkill": "Executa sua Habilidade {{skill}}",
-          "manualHint": "Você também pode criar rotinas pela aba Rotinas ou pedindo a qualquer agente."
-        }
+      "meet": {
+        "title": "Crie seu primeiro agente",
+        "body": "Dê um nome e uma cor ao seu agente. Você pode mudar quando quiser.",
+        "begin": "Criar agente",
+        "creating": "Criando..."
       },
-      "summary": {
-        "title": "Seu assistente está pronto",
-        "body": "Isto é tudo que você acabou de configurar. Você pode mudar qualquer coisa depois pela aba Habilidades ou Rotinas, ou apenas pedindo ao seu assistente.",
-        "skillCardTitle": "Habilidade",
-        "routineCardTitle": "Rotina",
-        "noSkill": "Nenhuma Habilidade salva",
-        "noRoutine": "Nenhuma Rotina salva",
-        "continueChip": "Entre no NodoFlux Agente"
+      "email": {
+        "title": "Veja seu agente em ação",
+        "offer": {
+          "option": "Enviar um e-mail para mim mesmo"
+        },
+        "chip": "Envie um e-mail por mim",
+        "placeholder": "Responda ao seu agente...",
+        "body": "Seu agente vai enviar um e-mail de verdade para você, para você vê-lo funcionar.",
+        "skip": "Pular por enquanto",
+        "skipHint": "Seu agente terminou, mas não confirmou. Você pode pular e começar a usar o NodoFlux Agente."
+      },
+      "aiConnected": {
+        "title": "Sua IA está conectada!",
+        "body": "Seu agente já pode pensar. Você está um passo mais perto.",
+        "cta": "Continuar"
+      },
+      "appsConnected": {
+        "title": "Apps conectados!",
+        "body": "Configuração concluída, mandou bem. Agora vamos criar seu primeiro agente.",
+        "cta": "Criar meu agente"
+      },
+      "connectEmail": {
+        "title": "Dê ao seu agente acesso ao seu e-mail",
+        "body": "Escolha seu e-mail para o agente poder enviar por você. Você conecta uma vez, com segurança.",
+        "other": "Outro provedor",
+        "otherPlaceholder": "Qual provedor de e-mail?",
+        "connect": "Conectar",
+        "connecting": "Conectando..."
+      },
+      "agentCreated": {
+        "title": "Agente criado!",
+        "body": "Conheça seu novo agente. Mais dois passos rápidos e ele estará trabalhando para você.",
+        "cta": "Continuar"
+      },
+      "emailConnected": {
+        "title": "E-mail conectado!",
+        "body": "É assim de fácil conectar um app, e seu agente pode acessar mais de 1000 assim.",
+        "cta": "Continuar"
+      },
+      "emailSent": {
+        "title": "E-mail enviado!",
+        "body": "Confira sua caixa de entrada, seu agente acabou de te enviar um e-mail de verdade.",
+        "cta": "Continuar"
+      },
+      "finished": {
+        "title": "Tudo pronto!",
+        "body": "Seu agente está pronto. O que você quer fazer agora?",
+        "tour": "Fazer um tour pelo NodoFlux Agente",
+        "tourBody": "Uma passada rápida pelo básico.",
+        "connectMore": "Conectar mais apps",
+        "connectMoreBody": "Dê ao seu agente acesso a mais ferramentas."
+      },
+      "onboardingIntro": {
+        "title": "Agora vamos colocá-lo para trabalhar",
+        "body": "Três passos rápidos para ver seu agente fazer algo de verdade.",
+        "cta": "Vamos"
       }
+    },
+    "sectionCounter": "{{section}} · {{current}} de {{total}}",
+    "sections": {
+      "setup": "Configuração",
+      "onboarding": "Primeiros passos"
     }
   }
 }

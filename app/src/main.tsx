@@ -17,7 +17,11 @@ import i18n from "./lib/i18n";
 import { DisclaimerGate } from "./components/shell/disclaimer-gate";
 import { LanguageGate } from "./components/shell/language-gate";
 import { showErrorToast } from "./lib/error-toast";
+import { isBenignLockRejection } from "./lib/benign-rejections";
 import { analytics, classifyAnalyticsError } from "./lib/analytics";
+import { runStartupAnalytics } from "./lib/startup-analytics";
+import { tauriSystem } from "./lib/tauri";
+import { loadTheme } from "./lib/theme";
 import { initSentry } from "./lib/sentry";
 import { installSentrySmokeShortcuts } from "./lib/sentry-smoke";
 
@@ -53,6 +57,16 @@ window.onerror = (_event, _source, _line, _col, error) => {
 
 window.onunhandledrejection = (event: PromiseRejectionEvent) => {
   const message = event.reason?.message ?? String(event.reason);
+  // Supabase's cross-context auth-refresh lock gets stolen as a normal part of
+  // its own recovery; the displaced promise rejects from a timer we can't
+  // catch. Not a real error — swallow it instead of toasting + reporting
+  // (HOU-435). console.debug only (not the patched console.error) so it never
+  // reaches the log file as an error or the user as a toast.
+  if (isBenignLockRejection(event.reason)) {
+    event.preventDefault();
+    console.debug("[global:unhandledrejection] ignored benign Web Locks contention:", message);
+    return;
+  }
   console.error("[global:unhandledrejection]", message, event.reason);
   analytics.captureException(event.reason, {
     source: "unhandled_rejection",
@@ -101,6 +115,41 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
     }
     return this.props.children;
   }
+}
+
+/**
+ * Install-lifecycle + theme bootstrap, mounted ABOVE the language/disclaimer
+ * gates. Emits `install_created` and runs `posthog.identify(install_id)` BEFORE
+ * any `onboarding_*` event so the sequential acquisition→activation funnel
+ * (keyed on `install_created` as step 1) doesn't break at step 2. The gates
+ * short-circuit `<App/>` on a fresh install, so analytics.init() can't live in
+ * App's mount effect — it would fire after the gate events. See
+ * `runStartupAnalytics`. Renders children immediately; never blocks.
+ */
+function StartupEffects({ children }: { children: ReactNode }) {
+  useEffect(() => {
+    // Wait for the engine handshake before touching engine-backed preferences.
+    // `install_id`, the first-install vintage, the daily-active date, and the
+    // theme all read through `tauriPreferences -> getEngine()`, which THROWS
+    // until the handshake lands. Running before then would have getInstallId
+    // swallow the failure, mint a fresh id, and re-fire `install_created` (and
+    // re-open the /welcome bridge) on every launch — churning identity. The
+    // race is widest on Windows, where the sidecar spawns slowest. Gating here
+    // restores the original "engine-ready" precondition (these used to run in
+    // App's mount effect, below <EngineGate>) while still emitting
+    // `install_created` BEFORE the language/disclaimer gates — they render
+    // inside <EngineGate>, i.e. only once this same handshake resolves.
+    let cancelled = false;
+    void whenEngineReady().then(() => {
+      if (cancelled) return;
+      void runStartupAnalytics(analytics, (url) => tauriSystem.openUrl(url));
+      void loadTheme();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return <>{children}</>;
 }
 
 /**
@@ -159,15 +208,17 @@ createRoot(document.getElementById("root")!).render(
   <QueryClientProvider client={queryClient}>
     <ErrorBoundary>
       <TooltipProvider>
-        <EngineGate>
-          <I18nextProvider i18n={i18n}>
-            <LanguageGate>
-              <DisclaimerGate>
-                <App />
-              </DisclaimerGate>
-            </LanguageGate>
-          </I18nextProvider>
-        </EngineGate>
+        <StartupEffects>
+          <EngineGate>
+            <I18nextProvider i18n={i18n}>
+              <LanguageGate>
+                <DisclaimerGate>
+                  <App />
+                </DisclaimerGate>
+              </LanguageGate>
+            </I18nextProvider>
+          </EngineGate>
+        </StartupEffects>
       </TooltipProvider>
     </ErrorBoundary>
   </QueryClientProvider>,

@@ -30,7 +30,7 @@ interface AgentManifest {
 ## Tabs
 
 Every agent renders the same five tabs in the shell:
-`Activity` (board) / `Routines` / `Files` / `Job Description` / `Integrations`.
+`Activity` (board) / `Routines` / `Files` / `Agent Settings` (tab id `job-description`) / `Integrations`.
 
 This used to be configurable per agent via a `tabs: AgentTab[]` field in `houston.json`, plus an optional `customComponent` pointing at a per-agent `bundle.js`. The flexibility was never used in practice (zero shipped agents had a custom React tab) and caused drift between installed agents and fresh ones whenever the default set changed. The set is now hardcoded in `app/src/agents/standard-tabs.ts` (`STANDARD_TABS`, `DEFAULT_TAB_ID`). Old `tabs` / `defaultTab` fields on installed manifests are ignored by the loader.
 
@@ -233,6 +233,37 @@ Notes:
 - Adding a fourth provider = one new adapter file + one registry entry +
   three dispatch arms (runner, parser, summarizer). See "Engine boundary"
   in `CLAUDE.md`.
+
+### Switching provider mid-conversation
+
+The picker is **never locked** — the user can switch a live conversation to a
+different provider at any time (HOU-424). Provider CLI sessions are not portable
+(Claude's resume id means nothing to Codex), so the engine runs a FRESH session
+on the new provider seeded with prior context, reusing the compaction machinery:
+
+- **Fits the new model's window** → carry the full transcript over verbatim
+  (`replay`). Lossless, but reloading the whole conversation costs tokens.
+- **Doesn't fit** → summarize with the TARGET provider to fit (`summarize`).
+  Lossy + spends a summarizer call.
+
+**Both** modes ask for confirmation first via `ProviderSwitchDialog` (they both
+spend tokens, scaling with the current conversation size), with mode-specific
+copy. The switch is staged only on confirm.
+
+The size decision is frontend-only — the context-window catalog lives in
+`app/src/lib/providers.ts` (`app/src/lib/provider-switch.ts::decideHandoffMode`).
+The choice is staged in `app/src/stores/provider-switch.ts`, forwarded on the
+next send as `POST .../sessions { providerSwitch: { mode, fromProvider } }`, and
+the engine reseeds in `houston_engine_core::sessions::run_start`: it clears the
+resolved provider's current resume id (so a switch-**back** never resumes a
+session missing the other provider's turns), builds the seed
+(`compaction::build_replay_seed` or `build_compaction_seed`, both reading the DB
+`chat_feed`, the summary running on the TARGET provider), and emits a
+`provider_switched` boundary divider. Because the handoff never touches the
+provider being LEFT, switching away from one that is out of credits or rate
+limited works. A seed failure surfaces as a session error (no silent
+blank-start); the staged handoff is cleared only on the `provider_switched`
+event, so a failed switch is retried on the next send.
 
 ### Reasoning effort
 

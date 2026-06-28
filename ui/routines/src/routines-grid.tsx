@@ -3,6 +3,10 @@
  *
  * The parent tab already labels this surface "Routines", so this view skips
  * a redundant page header and goes straight to a meta row + the list.
+ *
+ * Timezone is an account-wide setting (one zone for every routine), so its
+ * picker lives HERE on the list — not inside each routine's editor. It sits
+ * directly under the "New routine" row, capping the list it governs.
  */
 import {
   cn,
@@ -14,54 +18,63 @@ import {
 import { Plus } from "lucide-react"
 import type { Routine, RoutineRun } from "./types"
 import { RoutineRow } from "./routine-row"
-
-/**
- * Optional translated labels. English defaults so existing callers still
- * work. Consumers pass `t()` results for localization — `ui/` stays
- * i18n-agnostic per the library-boundary rule.
- */
-export interface RoutinesGridLabels {
-  loading?: string
-  emptyTitle?: string
-  emptyDescription?: string
-  descriptionShort?: string
-  newRoutine?: string
-}
-
-const DEFAULT_LABELS: Required<RoutinesGridLabels> = {
-  loading: "Loading…",
-  emptyTitle: "Set it and forget it",
-  emptyDescription:
-    "Routines fire on a schedule and only ping you when something actually needs attention.",
-  descriptionShort:
-    "Recurring tasks that fire on schedule and only ping you when something needs attention.",
-  newRoutine: "New routine",
-}
+import { TimezonePicker } from "./timezone-picker"
+import {
+  DEFAULT_GRID_LABELS,
+  DEFAULT_ROW_LABELS,
+  DEFAULT_SCHEDULE_SUMMARY_LABELS,
+  DEFAULT_NEXT_FIRE_LABELS,
+  type RoutinesGridLabels,
+  type RoutineRowLabels,
+  type ScheduleSummaryLabels,
+  type NextFireLabels,
+} from "./labels"
 
 export interface RoutinesGridProps {
   routines: Routine[]
   /** Most recent run per routine, keyed by routine ID. */
   lastRuns?: Record<string, RoutineRun>
-  /** Account-default IANA timezone — passed to rows for "next run" preview. */
+  /** The account-wide IANA timezone every routine fires in. */
   accountTimezone: string
+  /**
+   * Persist a new account-wide timezone. Changing it re-times every routine.
+   * Omit it (standalone callers) and the timezone bar is hidden.
+   */
+  onTimezoneChange?: (tz: string) => void
   loading?: boolean
   onSelect: (routineId: string) => void
   onCreate?: () => void
   onToggle?: (routineId: string, enabled: boolean) => void
+  /**
+   * Localized labels. English defaults so existing callers still work.
+   * Consumers pass `t()` results for localization — `ui/` stays i18n-agnostic
+   * per the library-boundary rule.
+   */
   labels?: RoutinesGridLabels
+  /** Row-level labels + schedule/next-run formatter labels, threaded to rows. */
+  rowLabels?: RoutineRowLabels
+  scheduleSummaryLabels?: ScheduleSummaryLabels
+  nextFireLabels?: NextFireLabels
+  /** BCP-47 locale for day names + time formatting in row summaries. */
+  locale?: string
 }
 
 export function RoutinesGrid({
   routines,
   lastRuns = {},
   accountTimezone,
+  onTimezoneChange,
   loading,
   onSelect,
   onCreate,
   onToggle,
-  labels,
+  labels = DEFAULT_GRID_LABELS,
+  rowLabels = DEFAULT_ROW_LABELS,
+  scheduleSummaryLabels = DEFAULT_SCHEDULE_SUMMARY_LABELS,
+  nextFireLabels = DEFAULT_NEXT_FIRE_LABELS,
+  locale = "en-US",
 }: RoutinesGridProps) {
-  const l = { ...DEFAULT_LABELS, ...labels }
+  const l = labels
   // Sort: enabled first, then alphabetical
   const sorted = [...routines].sort((a, b) => {
     if (a.enabled !== b.enabled) return a.enabled ? -1 : 1
@@ -115,6 +128,19 @@ export function RoutinesGrid({
           )}
         </div>
 
+        {/* Account-wide timezone — governs every routine in the list below. */}
+        {onTimezoneChange && (
+          <TimezonePicker
+            accountTimezone={accountTimezone}
+            onTimezoneChange={onTimezoneChange}
+            label={l.timezoneLabel}
+            hint={l.timezoneHint}
+            searchPlaceholder={l.timezoneSearchPlaceholder}
+            noResults={l.timezoneNoResults}
+            className="mb-3"
+          />
+        )}
+
         {/* List card — gray, divides hold rows */}
         <div
           className={cn(
@@ -132,6 +158,10 @@ export function RoutinesGrid({
               onToggle={
                 onToggle ? (enabled) => onToggle(routine.id, enabled) : undefined
               }
+              labels={rowLabels}
+              scheduleSummaryLabels={scheduleSummaryLabels}
+              nextFireLabels={nextFireLabels}
+              locale={locale}
             />
           ))}
         </div>
