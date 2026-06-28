@@ -24,6 +24,23 @@ export type FeedItem =
       data: { trigger: "native" | "proactive"; pre_tokens?: number | null };
     }
   | {
+      /**
+       * A provider-switch boundary. The conversation was handed to a different
+       * provider mid-session; the new provider ran a fresh session seeded with
+       * prior context — the full transcript (`summarized: false`) or an AI
+       * summary (`summarized: true`). Rendered as a subtle divider; the full
+       * chat above and below stays visible. `provider` is the provider switched
+       * TO. `pre_tokens` is how full the leaving provider's context was, when
+       * reported.
+       */
+      feed_type: "provider_switched";
+      data: {
+        provider: string;
+        summarized: boolean;
+        pre_tokens?: number | null;
+      };
+    }
+  | {
       feed_type: "file_changes";
       data: { created: string[]; modified: string[] };
     }
@@ -78,8 +95,16 @@ export type ProviderError =
       provider: string;
       model: string | null;
       scope: QuotaScope;
+      /** Human-readable reset hint (e.g. "Jul 1st, 2026 1:16 PM"); null when open-ended. */
+      resets_at: string | null;
       message: string;
-      upgrade_url: string | null;
+    }
+  | {
+      kind: "usage_limit_paused";
+      provider: string;
+      /** Human-readable reset hint (e.g. "3:30 PM" or "5pm (America/Bogota)"); null if unknown. */
+      resets_at: string | null;
+      message: string;
     }
   | {
       kind: "model_unavailable";

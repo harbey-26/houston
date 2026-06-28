@@ -138,7 +138,7 @@ export const PROVIDERS: readonly ProviderInfo[] = [
       {
         id: "claude-opus-4-8",
         label: "Opus 4.8",
-        description: "Newest flagship. Most capable, slower.",
+        description: "Latest Opus. Better alignment and agentic coding than 4.7.",
         // Opus 4.8: full range (same as 4.7). NOTE: `ultracode` is a Claude
         // Code harness mode, NOT an effort level — never add it here.
         effortLevels: ["low", "medium", "high", "xhigh", "max"],
@@ -148,10 +148,14 @@ export const PROVIDERS: readonly ProviderInfo[] = [
         // it can't self-correct downward, so the dialog flags it as estimated.
         contextWindow: 1_000_000,
       },
+      // Fable 5 (`claude-fable-5`) is intentionally absent from the picker for
+      // now — pulled per HOU-476. Engine support and its `modelDescriptions`
+      // copy in the chat locales are retained so re-adding a ModelOption here
+      // (full effort range, 1M window, 2x Opus 4.8 credits) re-enables it.
       {
         id: "claude-opus-4-7",
         label: "Opus 4.7",
-        description: "Previous flagship. Very capable, slower.",
+        description: "Previous flagship. Strong coding autonomy and complex reasoning.",
         // Opus 4.7: full range. Same 1M-on-Max default as Opus 4.8 above.
         effortLevels: ["low", "medium", "high", "xhigh", "max"],
         contextWindow: 1_000_000,

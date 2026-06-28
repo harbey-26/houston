@@ -164,12 +164,3 @@ export function HoustonLogo({
     </>
   );
 }
-
-/** Pulsing Houston logo — universal loading indicator for all agents */
-export function HoustonThinkingIndicator() {
-  return (
-    <div className="py-2 flex items-center gap-2">
-      <HoustonLogo size={20} className="animate-pulse" />
-    </div>
-  );
-}

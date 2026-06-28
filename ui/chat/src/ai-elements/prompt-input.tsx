@@ -35,7 +35,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@houston-ai/core";
-import { Spinner } from "@houston-ai/core";
 import {
   Tooltip,
   TooltipContent,
@@ -1272,9 +1271,11 @@ export const PromptInputSubmit = ({
 
   let Icon = <ArrowUpIcon className="size-4" />;
 
-  if (status === "submitted") {
-    Icon = <Spinner />;
-  } else if (status === "streaming") {
+  if (isGenerating) {
+    // Stop square: a solid square is the whole stop affordance while the
+    // agent is working. (It was previously paired with a spinner ring per
+    // issue #469; the ring was dropped — the square alone reads as
+    // stoppable.)
     Icon = <SquareIcon className="size-3.5 fill-current" />;
   } else if (status === "error") {
     Icon = <XIcon className="size-4" />;
