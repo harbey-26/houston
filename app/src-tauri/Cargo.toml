@@ -38,10 +38,14 @@ tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 tracing-appender = { workspace = true }
 rfd = "0.15"
-# Native app-activation. `window.set_focus()` (makeKeyAndOrderFront) does not
-# pull the app in front of the user's browser when we raise it programmatically
-# from a server-side event (OAuth/Composio finishing). `NSApplication.activate`
-# does — see `window_focus.rs`. Both already in the tree transitively via Tauri.
+
+# macOS-only. Native app-activation: `window.set_focus()` (makeKeyAndOrderFront)
+# does not pull the app in front of the user's browser when we raise it
+# programmatically from a server-side event (OAuth/Composio finishing).
+# `NSApplication.activate` does — see `window_focus.rs`. Both already in the tree
+# transitively via Tauri. Must be gated to macOS: objc2 hard-errors at compile
+# time on Windows/Linux.
+[target."cfg(target_os = \"macos\")".dependencies]
 objc2 = "0.6"
 objc2-app-kit = { version = "0.3", features = ["NSApplication", "NSResponder"] }
 
