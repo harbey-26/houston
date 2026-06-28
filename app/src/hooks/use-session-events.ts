@@ -108,7 +108,7 @@ export function useSessionEvents() {
           }
           if (status === "completed") {
             const workspace = h.getWorkspace();
-            const workspaceName = workspace?.name ?? "Houston";
+            const workspaceName = workspace?.name ?? "NodoFlux Agente";
 
             // Activity status flip (→ "needs_you") is owned by the
             // engine now — `sessions::start` spawns a task that writes

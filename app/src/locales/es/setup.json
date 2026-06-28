@@ -1,6 +1,6 @@
 {
   "welcome": {
-    "title": "Bienvenido a Houston",
+    "title": "Bienvenido a NodoFlux Agente",
     "tagline": "Haz lo imposible.",
     "getStarted": "Empezar"
   },
@@ -11,19 +11,19 @@
   },
   "provider": {
     "title": "Conecta tu IA",
-    "description": "Houston usa <emph>tu propia</emph> suscripción. Nunca vemos tus credenciales.",
+    "description": "NodoFlux Agente usa <emph>tu propia</emph> suscripción. Nunca vemos tus credenciales.",
     "finishPage": "Empezar",
     "finishDialog": "Crear espacio de trabajo"
   },
   "tutorial": {
-    "brand": "Houston",
+    "brand": "NodoFlux Agente",
     "counter": "Misión {{current}} de {{total}}",
     "eyebrow": "Misión {{number}}",
     "missionLabel": "Misión: {{title}}",
     "upNext": "Sigue",
     "welcome": {
-      "title": "Bienvenido a Houston",
-      "tagline": "Houston es donde construyes Agentes que funcionan con las mismas herramientas que usas para trabajar.",
+      "title": "Bienvenido a NodoFlux Agente",
+      "tagline": "NodoFlux Agente es donde construyes Agentes que funcionan con las mismas herramientas que usas para trabajar.",
       "stepsTitle": "El tutorial te guiará para crear tu primer agente:",
       "steps": {
         "meet": "Conoce a tu asistente",
@@ -58,14 +58,14 @@
       },
       "brain": {
         "title": "Dale un cerebro",
-        "body": "Tu asistente necesita un proveedor de IA para pensar y escribir. Houston usa tu propia suscripción.",
+        "body": "Tu asistente necesita un proveedor de IA para pensar y escribir. NodoFlux Agente usa tu propia suscripción.",
         "continue": "Crear mi asistente",
         "creating": "Creando",
-        "continueHint": "Houston creará tu asistente y abrirá la siguiente misión."
+        "continueHint": "NodoFlux Agente creará tu asistente y abrirá la siguiente misión."
       },
       "tools": {
         "title": "Dale tus propias herramientas",
-        "body": "Houston se conecta con tu correo, calendario y más de 1000 apps a través de tu proveedor de integraciones. Por defecto usamos Composio. Inicia sesión una vez para que tu asistente pueda trabajar con tus apps reales.",
+        "body": "NodoFlux Agente se conecta con tu correo, calendario y más de 1000 apps a través de tu proveedor de integraciones. Por defecto usamos Composio. Inicia sesión una vez para que tu asistente pueda trabajar con tus apps reales.",
         "cardTitle": "Proveedor de integraciones",
         "cardBody": "Inicia sesión para que tu asistente use tus apps. Proveedor por defecto: Composio.",
         "cardSignedInBody": "Tu asistente ya puede usar tus apps",
@@ -78,7 +78,7 @@
         "title": "Prueba una misión real",
         "intro": {
           "title": "Trabaja con tu primer agente",
-          "body": "En Houston, tus agentes se conectan a tus herramientas reales para hacer el trabajo por ti.",
+          "body": "En NodoFlux Agente, tus agentes se conectan a tus herramientas reales para hacer el trabajo por ti.",
           "cta": "Probémoslo"
         },
         "doneTitle": "Lo lograste. Primera misión completada.",
@@ -124,7 +124,7 @@
         "placeholder": "Responde a tu asistente...",
         "done": {
           "title": "Tu Rutina está lista",
-          "subtitle": "Houston ejecutará esto automáticamente en el horario que elegiste.",
+          "subtitle": "NodoFlux Agente ejecutará esto automáticamente en el horario que elegiste.",
           "everyWeekdayAt": "Cada día laboral a las {{time}}",
           "runsSkill": "Ejecuta tu Habilidad {{skill}}",
           "manualHint": "También puedes crear rutinas desde la pestaña Rutinas o pedirle a cualquier agente que las cree."
@@ -137,7 +137,7 @@
         "routineCardTitle": "Rutina",
         "noSkill": "Ninguna Habilidad guardada",
         "noRoutine": "Ninguna Rutina guardada",
-        "continueChip": "Entra a Houston"
+        "continueChip": "Entra a NodoFlux Agente"
       }
     }
   }

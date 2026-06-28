@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/nickelpack/tauri/v2/crates/tauri-config-schema/schema.json",
-  "productName": "Houston",
-  "identifier": "com.houston.app",
+  "productName": "NodoFlux Agente",
+  "identifier": "com.nodoflux.agente",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:1420",
@@ -12,7 +12,7 @@
     "withGlobalTauri": false,
     "windows": [
       {
-        "title": "Houston",
+        "title": "NodoFlux Agente",
         "width": 1440,
         "height": 900,
         "minWidth": 800,
@@ -30,17 +30,18 @@
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://github.com/gethouston/houston/releases/latest/download/latest.json"
+        "https://github.com/harbey-26/houston/releases/latest/download/latest.json"
       ],
-      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDJDQTdCMzc1MURERDRFQkQKUldTOVR0MGRkYk9uTEE4SUNnNElWZzVEN3QvcFQzczl6Y2NTMUpLSXJYZkxyK2g5azk4UHpRdmcK"
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDdBMDA2MDEzNEVCREQ2RjQKUldUMDFyMU9FMkFBZXJXNEcvelpKc3FjUE9NK0xoV0Urd2hZMXlZbWliUmY1d2hxemZEdjhTdm4K"
     },
     "deep-link": {
       "desktop": {
-        "schemes": ["houston"]
+        "schemes": ["nodoflux"]
       }
     }
   },
   "bundle": {
+    "publisher": "NodoFlux LLC",
     "createUpdaterArtifacts": true,
     "active": true,
     "targets": ["app", "dmg", "msi"],

@@ -1,6 +1,6 @@
 [package]
 name = "houston-app"
-version = "0.4.19"
+version = "1.0.2"
 edition = "2021"
 
 [lib]
@@ -37,13 +37,6 @@ reqwest = { version = "0.12", features = ["json", "rustls-tls", "blocking"], def
 tracing = { workspace = true }
 tracing-subscriber = { workspace = true }
 tracing-appender = { workspace = true }
-
-# macOS-only: native blocking dialog used by the first-launch DMG guard
-# (`dmg_guard.rs`). Must fire BEFORE the Tauri builder runs because once
-# the webview boots we've already committed to launching from the DMG.
-# `rfd` is pure Rust + AppKit, no React/Webview/Tauri dependency, so it
-# can pop a dialog at the very top of `run()`.
-[target."cfg(target_os = \"macos\")".dependencies]
 rfd = "0.15"
 
 # Windows + Linux only: the OS protocol handler launches a fresh

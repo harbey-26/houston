@@ -30,6 +30,40 @@ body {
   display: block;
 }
 
+/* Custom logo theme toggles */
+.houston-logo-dark {
+  display: block;
+}
+.houston-logo-light {
+  display: none;
+}
+
+/* Inside a primary button in light mode, show light logo and hide dark logo */
+.bg-primary .houston-logo-dark,
+[data-state] .bg-primary .houston-logo-dark {
+  display: none !important;
+}
+.bg-primary .houston-logo-light,
+[data-state] .bg-primary .houston-logo-light {
+  display: block !important;
+}
+
+/* Dark mode default */
+[data-theme="dark"] .houston-logo-dark {
+  display: none;
+}
+[data-theme="dark"] .houston-logo-light {
+  display: block;
+}
+
+/* Inside a primary button in dark mode, show dark logo and hide light logo */
+[data-theme="dark"] .bg-primary .houston-logo-dark {
+  display: block !important;
+}
+[data-theme="dark"] .bg-primary .houston-logo-light {
+  display: none !important;
+}
+
 /* Style links in assistant chat messages as xs primary pill buttons */
 .group.is-assistant a[href] {
   display: inline-flex;

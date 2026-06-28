@@ -1,0 +1,231 @@
+# NodoFlux Agente Release Workflow
+#
+# Triggered by pushing a version tag: git tag v0.5.0 && git push origin v0.5.0
+#
+# Builds macOS (Apple Silicon + Intel) and Windows x64 installers,
+# signs with Tauri updater key, creates a GitHub Release with auto-update manifest.
+#
+# Required secrets:
+#   TAURI_SIGNING_PRIVATE_KEY          — Tauri updater key
+#   TAURI_SIGNING_PRIVATE_KEY_PASSWORD — Password for the updater key (empty if none)
+
+name: NodoFlux Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Cache Rust artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Stage bundled CLI dependencies (codex, composio)
+        run: |
+          set -euo pipefail
+          if ! command -v jq >/dev/null 2>&1; then
+            brew install jq
+          fi
+          ./scripts/fetch-cli-deps.sh both
+          echo "=== Staged bundle ==="
+          ls -lah app/src-tauri/resources/bin/
+
+      - name: Build houston-engine sidecar (aarch64 + x86_64)
+        run: |
+          set -euo pipefail
+          for TRIPLE in aarch64-apple-darwin x86_64-apple-darwin; do
+            echo "=== Building houston-engine for $TRIPLE ==="
+            cargo build --release --target "$TRIPLE" -p houston-engine-server
+          done
+          mkdir -p app/src-tauri/binaries
+          lipo -create \
+            target/aarch64-apple-darwin/release/houston-engine \
+            target/x86_64-apple-darwin/release/houston-engine \
+            -output app/src-tauri/binaries/houston-engine-universal-apple-darwin
+          chmod +x app/src-tauri/binaries/houston-engine-universal-apple-darwin
+
+      - name: Build Tauri app (universal macOS)
+        uses: tauri-apps/tauri-action@v0
+        with:
+          projectPath: app
+          args: --target universal-apple-darwin
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+      - name: Locate build artifacts
+        id: artifacts
+        run: |
+          BUNDLE="target/universal-apple-darwin/release/bundle"
+          DMG=$(ls -t "$BUNDLE/dmg/"*.dmg 2>/dev/null | head -1)
+          TAR=$(ls -t "$BUNDLE/macos/"*.app.tar.gz 2>/dev/null | head -1)
+          SIG=$(ls -t "$BUNDLE/macos/"*.app.tar.gz.sig 2>/dev/null | head -1)
+          echo "dmg=$DMG" >> "$GITHUB_OUTPUT"
+          echo "tar=$TAR" >> "$GITHUB_OUTPUT"
+          echo "sig=$SIG" >> "$GITHUB_OUTPUT"
+
+      - name: Generate updater manifest (latest.json)
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          TAR_NAME=$(basename "${{ steps.artifacts.outputs.tar }}" | tr ' ' '.')
+          SIG=$(cat "${{ steps.artifacts.outputs.sig }}")
+          URL="https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/$TAR_NAME"
+          jq -n \
+            --arg v "$VERSION" \
+            --arg sig "$SIG" \
+            --arg url "$URL" \
+            --arg date "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" \
+            '{
+              version: $v,
+              pub_date: $date,
+              platforms: {
+                "darwin-aarch64": { signature: $sig, url: $url },
+                "darwin-x86_64": { signature: $sig, url: $url }
+              }
+            }' > latest.json
+          cat latest.json
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" \
+            --title "NodoFlux Agente v$VERSION" \
+            --generate-notes \
+            "${{ steps.artifacts.outputs.dmg }}" \
+            "${{ steps.artifacts.outputs.tar }}" \
+            "${{ steps.artifacts.outputs.sig }}" \
+            latest.json
+
+  build-windows:
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Rust artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Install Bun + jq + zstd (Windows CLI build deps)
+        shell: pwsh
+        run: |
+          $bunVersion = (Get-Content cli-deps.json | ConvertFrom-Json).composio.build.'windows-x64'.bun_version
+          $bunDir = "$HOME\.bun\bin"
+          New-Item -ItemType Directory -Force -Path $bunDir | Out-Null
+          $url = "https://github.com/oven-sh/bun/releases/download/bun-v$bunVersion/bun-windows-x64.zip"
+          Invoke-WebRequest -Uri $url -OutFile "$env:TEMP\bun.zip"
+          Expand-Archive -Force -Path "$env:TEMP\bun.zip" -DestinationPath "$env:TEMP\bun-extract"
+          Copy-Item -Force "$env:TEMP\bun-extract\bun-windows-x64\bun.exe" "$bunDir\bun.exe"
+          echo "$bunDir" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+          choco install -y jq zstandard --no-progress
+
+      - name: Stage bundled CLI dependencies (codex, composio)
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./scripts/fetch-cli-deps.sh windows-x64
+          echo "=== Staged bundle ==="
+          ls -lah app/src-tauri/resources/bin/
+
+      - name: Build houston-engine sidecar
+        shell: bash
+        run: |
+          cargo build --release --target x86_64-pc-windows-msvc -p houston-engine-server
+
+      - name: Build Tauri app (Windows MSI)
+        uses: tauri-apps/tauri-action@v0
+        with:
+          projectPath: app
+          args: --target x86_64-pc-windows-msvc
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+
+      - name: Locate MSI artifact
+        id: artifacts-win
+        shell: bash
+        run: |
+          MSI=$(ls -t target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi 2>/dev/null | head -1)
+          SIG=$(ls -t target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi.sig 2>/dev/null | head -1)
+          echo "msi=$MSI" >> "$GITHUB_OUTPUT"
+          echo "sig=$SIG" >> "$GITHUB_OUTPUT"
+
+      - name: Upload Windows artifacts to release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          # Wait for macOS job to create the release
+          for i in $(seq 1 30); do
+            if gh release view "$GITHUB_REF_NAME" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+              break
+            fi
+            echo "Waiting for release to be created... ($i/30)"
+            sleep 10
+          done
+          gh release upload "$GITHUB_REF_NAME" \
+            "${{ steps.artifacts-win.outputs.msi }}" \
+            "${{ steps.artifacts-win.outputs.sig }}" \
+            --clobber

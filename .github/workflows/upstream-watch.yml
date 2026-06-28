@@ -1,0 +1,100 @@
+# Watch for new Houston upstream releases
+#
+# Runs daily at 9:00 AM UTC (4:00 AM Colombia). When a new release is
+# detected, creates a GitHub Issue with merge instructions.
+# Can also be triggered manually from the Actions tab.
+
+name: Upstream Release Watch
+
+on:
+  schedule:
+    - cron: "0 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check for new upstream release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          UPSTREAM="gethouston/houston"
+          LOCAL_REPO="${{ github.repository }}"
+
+          # Get latest upstream release tag
+          UPSTREAM_TAG=$(gh api "repos/$UPSTREAM/releases/latest" --jq '.tag_name' 2>/dev/null || echo "")
+          if [ -z "$UPSTREAM_TAG" ]; then
+            echo "Could not fetch upstream release. Skipping."
+            exit 0
+          fi
+          UPSTREAM_VERSION="${UPSTREAM_TAG#v}"
+          echo "Upstream latest: $UPSTREAM_TAG"
+
+          # Check if we already created an issue for this version
+          EXISTING=$(gh issue list --repo "$LOCAL_REPO" \
+            --search "Upstream Houston $UPSTREAM_TAG" \
+            --state all --limit 1 --json number --jq '.[0].number // empty')
+
+          if [ -n "$EXISTING" ]; then
+            echo "Issue #$EXISTING already exists for $UPSTREAM_TAG. Skipping."
+            exit 0
+          fi
+
+          # Get our latest release tag for comparison
+          LOCAL_TAG=$(gh api "repos/$LOCAL_REPO/releases/latest" --jq '.tag_name' 2>/dev/null || echo "none")
+          echo "Our latest: $LOCAL_TAG"
+
+          # Get upstream release notes
+          RELEASE_NOTES=$(gh api "repos/$UPSTREAM/releases/latest" --jq '.body // "No release notes available."')
+          RELEASE_URL=$(gh api "repos/$UPSTREAM/releases/latest" --jq '.html_url')
+
+          # Create issue
+          gh issue create --repo "$LOCAL_REPO" \
+            --title "Upstream Houston $UPSTREAM_TAG available — merge into NodoFlux Agente" \
+            --label "upstream" \
+            --body "$(cat <<EOF
+          ## Houston $UPSTREAM_TAG has been released
+
+          **Release:** $RELEASE_URL
+          **Our current version:** $LOCAL_TAG
+
+          ### What to do
+
+          \`\`\`bash
+          # 1. Fetch upstream changes
+          git fetch upstream
+
+          # 2. Update main branch
+          git checkout main
+          git merge upstream/main
+          git push origin main
+
+          # 3. Rebase branding on top
+          git checkout branding
+          git rebase main
+          # Resolve conflicts in branding files if needed
+          git push origin branding --force-with-lease
+
+          # 4. Bump version and tag
+          # Edit app/package.json and app/src-tauri/Cargo.toml with new version
+          git add -A && git commit -m "release: v$UPSTREAM_VERSION"
+          git tag v$UPSTREAM_VERSION
+          git push origin branding
+          git push origin v$UPSTREAM_VERSION
+          # CI will build and publish automatically
+          \`\`\`
+
+          ### Upstream release notes
+
+          $RELEASE_NOTES
+          EOF
+          )"
+
+          echo "Issue created for upstream $UPSTREAM_TAG"

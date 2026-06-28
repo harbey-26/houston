@@ -2465,7 +2465,7 @@ dependencies = [
 
 [[package]]
 name = "houston-app"
-version = "0.4.19"
+version = "1.0.2"
 dependencies = [
  "chrono",
  "dirs 5.0.1",
