@@ -55,10 +55,13 @@ jobs:
           RELEASE_NOTES=$(gh api "repos/$UPSTREAM/releases/latest" --jq '.body // "No release notes available."')
           RELEASE_URL=$(gh api "repos/$UPSTREAM/releases/latest" --jq '.html_url')
 
-          # Create issue
+          # Create issue. Assigned to the maintainer because assignment
+          # notifications always email, regardless of watch settings —
+          # unassigned bot-created issues can go completely unnoticed.
           gh issue create --repo "$LOCAL_REPO" \
             --title "Upstream Houston $UPSTREAM_TAG available — merge into NodoFlux Agente" \
             --label "upstream" \
+            --assignee "harbey-26" \
             --body "$(cat <<EOF
           ## Houston $UPSTREAM_TAG has been released
 
