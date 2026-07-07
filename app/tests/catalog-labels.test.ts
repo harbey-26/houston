@@ -27,6 +27,21 @@ describe("localizeCatalogCopy", () => {
     strictEqual(result.description, "Descripción en español");
   });
 
+  it("translates a rebranded builtin (author NodoFlux) that has catalog entries", () => {
+    // Our builtins carry author "NodoFlux" after the rebrand; they must stay
+    // first-party or the store i18n feature silently skips them.
+    const t = fakeT({
+      "agents:catalog.blank.name": "Empezar desde cero",
+      "agents:catalog.blank.description": "Un agente en blanco",
+    });
+    const result = localizeCatalogCopy(
+      { id: "blank", name: "Start from scratch", description: "A blank agent", author: "NodoFlux" },
+      t,
+    );
+    strictEqual(result.name, "Empezar desde cero");
+    strictEqual(result.description, "Un agente en blanco");
+  });
+
   it("translates a bundled Houston store listing by id", () => {
     const t = fakeT({
       "agents:catalog.bookkeeping.name": "Contabilidad",
