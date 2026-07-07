@@ -99,6 +99,41 @@ jobs:
           echo "tar=$TAR" >> "$GITHUB_OUTPUT"
           echo "sig=$SIG" >> "$GITHUB_OUTPUT"
 
+      # The update card in the app renders latest.json's `notes` field and
+      # expects en/es/pt packed into ONE string: the English body followed by a
+      # trailing `<!--houston-i18n:{"es":...,"pt":...}-->` comment (see
+      # app/src/lib/update-details.ts — the marker name is an internal
+      # contract, not user-facing branding). Authored notes live at
+      # .github/release-notes/<version>.md (+ .es.md / .pt.md). Missing files
+      # degrade gracefully: no notes file means no `notes` key and the card
+      # shows its "no details" fallback.
+      - name: Build localized updater notes
+        run: |
+          set -euo pipefail
+          VERSION="${GITHUB_REF_NAME#v}"
+          NOTES_DIR=".github/release-notes"
+          : > update-notes.txt
+          if [ -f "$NOTES_DIR/$VERSION.md" ]; then
+            cp "$NOTES_DIR/$VERSION.md" update-notes.txt
+            ARGS=()
+            FILTER='{}'
+            for lang in es pt; do
+              if [ -f "$NOTES_DIR/$VERSION.$lang.md" ]; then
+                ARGS+=(--rawfile "$lang" "$NOTES_DIR/$VERSION.$lang.md")
+                FILTER="$FILTER + {\"$lang\": \$$lang}"
+              fi
+            done
+            if [ ${#ARGS[@]} -gt 0 ]; then
+              I18N=$(jq -nc "${ARGS[@]}" "$FILTER")
+              printf '\n\n<!--houston-i18n:%s-->\n' "$I18N" >> update-notes.txt
+            fi
+          else
+            echo "No authored notes at $NOTES_DIR/$VERSION.md; updater card will show no details."
+          fi
+          echo "----- update-notes.txt -----"
+          cat update-notes.txt
+          echo "----- end -----"
+
       - name: Generate updater manifest (latest.json)
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
@@ -110,6 +145,7 @@ jobs:
             --arg sig "$SIG" \
             --arg url "$URL" \
             --arg date "$(date -u +%Y-%m-%dT%H:%M:%S.000Z)" \
+            --rawfile notes update-notes.txt \
             '{
               version: $v,
               pub_date: $date,
@@ -117,7 +153,8 @@ jobs:
                 "darwin-aarch64": { signature: $sig, url: $url },
                 "darwin-x86_64": { signature: $sig, url: $url }
               }
-            }' > latest.json
+            } + (if ($notes | length) > 0 then { notes: $notes } else {} end)' \
+            > latest.json
           cat latest.json
 
       - name: Create GitHub Release
@@ -125,9 +162,15 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
+          NOTES_FILE=".github/release-notes/${VERSION}.md"
+          if [ -f "$NOTES_FILE" ]; then
+            NOTES_ARGS=(--notes-file "$NOTES_FILE")
+          else
+            NOTES_ARGS=(--generate-notes)
+          fi
           gh release create "$GITHUB_REF_NAME" \
             --title "NodoFlux Agente v$VERSION" \
-            --generate-notes \
+            "${NOTES_ARGS[@]}" \
             "${{ steps.artifacts.outputs.dmg }}" \
             "${{ steps.artifacts.outputs.tar }}" \
             "${{ steps.artifacts.outputs.sig }}" \
@@ -229,3 +272,42 @@ jobs:
             "${{ steps.artifacts-win.outputs.msi }}" \
             "${{ steps.artifacts-win.outputs.sig }}" \
             --clobber
+
+      # The macOS job writes latest.json with only the darwin entries (it has
+      # no access to the MSI signature, which is produced here). Patch the
+      # published manifest with the windows-x86_64 entry so Windows installs
+      # get in-app auto-updates too. GitHub rewrites spaces in asset names to
+      # dots, hence the `tr`.
+      - name: Add windows-x86_64 to updater manifest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          MSI_NAME=$(basename "${{ steps.artifacts-win.outputs.msi }}" | tr ' ' '.')
+          SIG=$(cat "${{ steps.artifacts-win.outputs.sig }}")
+          URL="https://github.com/${{ github.repository }}/releases/download/${GITHUB_REF_NAME}/${MSI_NAME}"
+
+          # latest.json is uploaded by the macOS job; the release-exists wait
+          # above does not guarantee the asset is there yet, so retry.
+          FOUND=""
+          for i in $(seq 1 20); do
+            if gh release download "$GITHUB_REF_NAME" --repo "${{ github.repository }}" \
+                 --pattern latest.json --output latest.json --clobber 2>/dev/null; then
+              FOUND=1
+              break
+            fi
+            echo "latest.json not on the release yet... ($i/20)"
+            sleep 15
+          done
+          if [ -z "$FOUND" ]; then
+            echo "::error::latest.json never appeared on the release; Windows updater entry NOT added."
+            exit 1
+          fi
+
+          jq --arg sig "$SIG" --arg url "$URL" \
+            '.platforms."windows-x86_64" = { signature: $sig, url: $url }' \
+            latest.json > latest.patched.json
+          mv latest.patched.json latest.json
+          cat latest.json
+          gh release upload "$GITHUB_REF_NAME" latest.json --clobber

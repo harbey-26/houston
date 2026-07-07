@@ -30,7 +30,7 @@ describe("prettifyAuthError", () => {
   it("maps a disabled provider", () => {
     strictEqual(
       prettifyAuthError("Provider azure is not enabled"),
-      "This sign-in option isn't turned on for Houston yet. Try another option.",
+      "This sign-in option isn't turned on for NodoFlux Agente yet. Try another option.",
     );
   });
 
